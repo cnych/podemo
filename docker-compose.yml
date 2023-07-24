@@ -1,0 +1,19 @@
+version: "3.7"
+services:
+  mysql:
+    image: mysql:8.0.33
+    environment:
+      MYSQL_ROOT_PASSWORD: root321
+      MYSQL_DATABASE: bookdb
+      MYSQL_USER: otel
+      MYSQL_PASSWORD: otel321
+    volumes:
+      - mysql_data:/var/lib/mysql
+    ports:
+      - "3306:3306"
+  redis:
+    image: redis:6-alpine
+    ports:
+      - "6379:6379"
+volumes:
+  mysql_data:
