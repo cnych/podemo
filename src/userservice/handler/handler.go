@@ -51,8 +51,9 @@ func LoginHandler(c *gin.Context) {
 		return
 	}
 
+	var userinfo UserInfo
 	var hashedPassword string
-	err := db.QueryRow("SELECT password FROM users WHERE username = ?", user.Username).Scan(&hashedPassword)
+	err := db.QueryRow("SELECT id, username, password FROM users WHERE username = ?", user.Username).Scan(&userinfo.ID, &userinfo.Username, &hashedPassword)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			c.JSON(http.StatusUnauthorized, gin.H{"error": "Username or password incorrect"})
@@ -68,14 +69,14 @@ func LoginHandler(c *gin.Context) {
 	}
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
-		"id":       user.ID,
-		"username": user.Username,
+		"id":       userinfo.ID,
+		"username": userinfo.Username,
 		"exp":      time.Now().Add(time.Hour * 24).Unix(),
 	})
-
 	tokenString, _ := token.SignedString([]byte("your_secret_key"))
+	userinfo.Token = tokenString
 
-	c.JSON(http.StatusOK, JWT{Token: tokenString})
+	c.JSON(http.StatusOK, userinfo)
 }
 
 func UserInfoHandler(c *gin.Context) {

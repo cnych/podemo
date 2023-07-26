@@ -14,7 +14,7 @@ db.connect((err) => {
 
 const getBooksHandler = (req, res) => {
   db.query(
-    "SELECT id, title, cover_url, author, price FROM books",
+    "SELECT id, title, cover_url, author, price,description FROM books",
     (err, result) => {
       if (err) {
         res.status(500).json({ error: err.message });
