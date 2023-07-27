@@ -2,19 +2,22 @@ package com.youdianzhishi.orderservice.model;
 
 import jakarta.persistence.*;
 import org.springframework.data.annotation.CreatedDate;
+import com.fasterxml.jackson.databind.ObjectMapper; // 使用Jackson库
+
+import java.io.IOException;
+import java.util.Arrays;
 import java.util.Date;
+import java.util.List;
 
 
 
 @Entity
 @Table(name = "orders")
 public class Order { 
-
     final public static int ORDERED = 0;
     final public static int PAID = 1;
     final public static int CANCELLED = 2;
     
-
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
     private Long id;
@@ -52,6 +55,11 @@ public class Order {
 
     public void setBooks(String books) {
         this.books = books;
+    }
+
+    public List<Long> getBookIds() throws IOException {
+        ObjectMapper mapper = new ObjectMapper();
+        return Arrays.asList(mapper.readValue(books, Long[].class));
     }
 
     public int getUserId() {

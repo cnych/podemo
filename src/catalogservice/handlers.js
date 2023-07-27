@@ -12,7 +12,7 @@ db.connect((err) => {
   console.log("Connected to MySQL");
 });
 
-const getBooksHandler = (req, res) => {
+const getBookListHandler = (req, res) => {
   db.query(
     "SELECT id, title, cover_url, author, price,description FROM books",
     (err, result) => {
@@ -25,7 +25,7 @@ const getBooksHandler = (req, res) => {
   );
 };
 
-const getBookHandler = (req, res) => {
+const getBookDetailHandler = (req, res) => {
   const { id } = req.params;
   db.query(
     "SELECT id, title, cover_url, author, price, description FROM books WHERE id = ?",
@@ -45,7 +45,24 @@ const getBookHandler = (req, res) => {
   );
 };
 
+const getBookBatchHandler = (req, res) => {
+  const { ids } = req.query;
+  const idsArray = ids.split(",").map((id) => parseInt(id));
+  db.query(
+    "SELECT id, title, cover_url, author, price, description FROM books WHERE id IN (?)",
+    [idsArray],
+    (err, result) => {
+      if (err) {
+        res.status(500).json({ error: err.message });
+        return;
+      }
+      res.json(result);
+    }
+  );
+};
+
 module.exports = {
-  getBooksHandler,
-  getBookHandler,
+  getBookListHandler,
+  getBookDetailHandler,
+  getBookBatchHandler,
 };

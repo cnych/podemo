@@ -13,8 +13,9 @@ public class CorsConfig implements WebMvcConfigurer {
     public void addCorsMappings(CorsRegistry registry) {
         registry.addMapping("/**")
                 .allowedOriginPatterns("*") // 这里应该改为你的前端服务地址
-                .allowedMethods("GET", "POST", "PUT", "DELETE", "HEAD")
+                .allowedMethods("OPTIONS", "GET", "POST", "PUT", "DELETE", "HEAD")
                 .allowCredentials(true)
+                .exposedHeaders("Authorization") // 允许"Authorization"被读取
                 .maxAge(3600);
     }
 
