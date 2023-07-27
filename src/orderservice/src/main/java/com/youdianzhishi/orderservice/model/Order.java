@@ -5,9 +5,15 @@ import org.springframework.data.annotation.CreatedDate;
 import java.util.Date;
 
 
+
 @Entity
 @Table(name = "orders")
 public class Order { 
+
+    final public static int ORDERED = 0;
+    final public static int PAID = 1;
+    final public static int CANCELLED = 2;
+    
 
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
@@ -17,8 +23,6 @@ public class Order {
 
     private int userId;
 
-    @Column(nullable = false, updatable = false)
-    @Temporal(TemporalType.TIMESTAMP)
     @CreatedDate
     private Date orderDate;
 

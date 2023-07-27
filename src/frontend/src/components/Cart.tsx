@@ -2,6 +2,7 @@ import React, { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Table, Button, Popconfirm, message } from "antd";
 import { PayCircleOutlined, ClearOutlined } from "@ant-design/icons";
+import axios from "axios";
 import { useAuth } from "../hooks/useAuth";
 import { useCart } from "../hooks/useCart";
 import "./Cart.css";
@@ -10,7 +11,7 @@ export const Cart: React.FC = () => {
   const history = useNavigate();
   const [amount, setAmount] = React.useState(""); // 总金额
   const [checkoutLoading, setCheckoutLoading] = React.useState(false); // 结算按钮的 loading 状态
-  const { isLoggedIn } = useAuth();
+  const { isLoggedIn, user } = useAuth();
   const { cart, cartCount, clearCart, increaseQuantity, decreaseQuantity } =
     useCart();
 
@@ -36,12 +37,45 @@ export const Cart: React.FC = () => {
       return;
     }
     setCheckoutLoading(true);
-    // 模拟结算请求
-    setTimeout(() => {
-      setCheckoutLoading(false);
-      // clearCart();
-      message.success("结算成功");
-    }, 2000);
+
+    const bookData = cart.map((item) => {
+      return {
+        book_id: item.id,
+        quantity: item.quantity,
+      };
+    });
+
+    axios
+      .post(
+        "http://localhost:8081/api/orders",
+        {
+          books: JSON.stringify(bookData),
+        },
+        {
+          headers: { Authorization: `Bearer ${user.token}` },
+        }
+      )
+      .then((res) => {
+        console.log(res);
+        if (res && res.data && res.data.id) {
+          clearCart();
+          message.success("提交成功");
+          history(`/order/${res.data.id}`);
+        } else {
+          message.error("提交失败");
+        }
+        setCheckoutLoading(false);
+      })
+      .catch((err) => {
+        console.log(err);
+        setCheckoutLoading(false);
+        if (err.response.status === 401) {
+          message.error("请先登录");
+          history("/auth");
+          return;
+        }
+        message.error("结算失败");
+      });
   };
 
   const columns = [
