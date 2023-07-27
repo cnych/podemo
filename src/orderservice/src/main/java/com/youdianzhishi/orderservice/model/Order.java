@@ -13,7 +13,7 @@ public class Order {
     @GeneratedValue(strategy = GenerationType.AUTO)
     private Long id;
 
-    private int bookId;
+    private String books;  // 用来保存订单中的书籍json数组：[{"id":1,"quantity":2},{"id":2,"quantity":3}]
 
     private int userId;
 
@@ -27,8 +27,8 @@ public class Order {
     public Order() {
     }
 
-    public Order(int bookId, int userId, int status) {
-        this.bookId = bookId;
+    public Order(String books, int userId, int status) {
+        this.books = books;
         this.userId = userId;
         this.status = status;
     }
@@ -42,12 +42,12 @@ public class Order {
         this.id = id;
     }
 
-    public int getBookId() {
-        return bookId;
+    public String getBooks() {
+        return books;
     }
 
-    public void setBookId(int bookId) {
-        this.bookId = bookId;
+    public void setBooks(String books) {
+        this.books = books;
     }
 
     public int getUserId() {
@@ -73,4 +73,5 @@ public class Order {
     public void setStatus(int status) {
         this.status = status;
     }
+
 }

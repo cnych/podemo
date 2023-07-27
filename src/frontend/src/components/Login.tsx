@@ -1,14 +1,14 @@
-import React, { useState, useContext } from "react";
+import React, { useState } from "react";
 import { Form, Input, Button, message, Typography } from "antd";
 import { UserOutlined, LockOutlined } from "@ant-design/icons";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
-import AuthContext from "../context/AuthContext";
+import { useAuth } from "../hooks/useAuth";
 import User from "../types/User";
 
 const Login = (props: { switchLogin: () => void }) => {
+  const { onLogin } = useAuth();
   const [loading, setLoading] = useState(false);
-  const authCtx = useContext(AuthContext);
   const history = useNavigate();
 
   const onFinish = (values: any) => {
@@ -24,7 +24,7 @@ const Login = (props: { switchLogin: () => void }) => {
           username: userInfo.username,
           token: userInfo.token,
         };
-        authCtx.onLogin(user);
+        onLogin(user);
         message.success("登录成功");
         setLoading(false);
         history("/");

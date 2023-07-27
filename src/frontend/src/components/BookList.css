@@ -129,3 +129,7 @@ img {
   display: flex;
   align-items: center;
 }
+.book-item .actions-right .quantity-tag {
+  font-size: 13px;
+  padding: 6px;
+}

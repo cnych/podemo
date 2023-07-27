@@ -1,68 +1,44 @@
-import { useState, useEffect, useContext } from "react";
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import { Layout } from "antd";
 
 import { Auth } from "./pages/Auth";
-import { Cart } from "./pages/Cart";
+import { Order } from "./pages/Order";
+import { OrderDeal } from "./pages/OrderDeal";
+import { Cart } from "./components/Cart";
 import BookList from "./components/BookList";
 import Nav from "./components/Nav";
-import AuthContext from "./context/AuthContext";
-import User from "./types/User";
+import { AuthProvider } from "./context/AuthContext";
+import { CartProvider } from "./context/CartContext";
 import "./App.css";
 
 const { Content, Footer } = Layout;
 
 function App() {
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [user, setUser] = useState<User>({} as User);
-  const authCtx = useContext(AuthContext);
-
-  const loginHandler = (user: User) => {
-    setIsLoggedIn(true);
-    setUser(user);
-    // 保存 user 到 localStorage
-    localStorage.setItem("user", JSON.stringify(user));
-  };
-
-  const logoutHandler = () => {
-    setIsLoggedIn(false);
-    setUser({} as User);
-    localStorage.removeItem("user");
-  };
-
-  useEffect(() => {
-    const user = JSON.parse(localStorage.getItem("user") || "{}");
-    if (user.token) {
-      loginHandler(user);
-    }
-  }, [authCtx]);
-
   return (
     <Router>
-      <AuthContext.Provider
-        value={{
-          isLoggedIn: isLoggedIn,
-          user: user,
-          onLogout: logoutHandler,
-          onLogin: loginHandler,
-        }}
-      >
-        <Layout>
-          <Nav />
+      <AuthProvider>
+        <CartProvider>
+          <Layout>
+            <Nav />
 
-          <Content style={{ padding: "50px", minHeight: "85vh" }}>
-            <Routes>
-              <Route path="/" element={<BookList />} />
-              <Route path="/auth" element={<Auth />} />
-              <Route path="/cart" element={<Cart />} />
-            </Routes>
-          </Content>
+            <Content
+              style={{ padding: "50px", minHeight: "85vh", margin: "0 120px" }}
+            >
+              <Routes>
+                <Route path="/" element={<BookList />} />
+                <Route path="/auth" element={<Auth />} />
+                <Route path="/cart" element={<Cart />} />
+                <Route path="/order" element={<Order />} />
+                <Route path="/order/:id" element={<OrderDeal />} />
+              </Routes>
+            </Content>
 
-          <Footer style={{ textAlign: "center" }}>
-            OpenTelemetry Demo ©2023 Created by @优点知识
-          </Footer>
-        </Layout>
-      </AuthContext.Provider>
+            <Footer style={{ textAlign: "center" }}>
+              OpenTelemetry Demo ©2023 Created by @优点知识
+            </Footer>
+          </Layout>
+        </CartProvider>
+      </AuthProvider>
     </Router>
   );
 }

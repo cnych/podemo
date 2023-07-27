@@ -1,18 +1,18 @@
 import { useNavigate } from "react-router-dom";
 import type { MenuProps } from "antd";
-import { Layout, Menu, Dropdown, Button } from "antd";
-import { useContext } from "react";
+import { Layout, Menu, Dropdown, Button, message } from "antd";
 import { DownOutlined } from "@ant-design/icons";
-import AuthContext from "../context/AuthContext";
+import { useAuth } from "../hooks/useAuth";
 import "./Nav.css";
 
 const { Header } = Layout;
 
 const Nav = () => {
   const history = useNavigate();
-  const authCtx = useContext(AuthContext);
+  const { isLoggedIn, user, onLogout } = useAuth();
+  // const authCtx = useContext(AuthContext);
 
-  const menuItems: MenuProps["items"] = authCtx.isLoggedIn
+  const menuItems: MenuProps["items"] = isLoggedIn
     ? [
         {
           key: "1",
@@ -20,7 +20,7 @@ const Nav = () => {
         },
         {
           key: "3",
-          label: "购物车",
+          label: "订单",
         },
       ]
     : [
@@ -40,32 +40,38 @@ const Nav = () => {
     } else if (e.key === "2") {
       history("/auth");
     } else if (e.key === "3") {
-      history("/cart");
+      history("/order");
     }
   };
 
   const dropdownMenus: MenuProps["items"] = [
     {
+      label: "个人中心",
+      key: "1",
+    },
+    {
+      label: "我的优惠券",
+      key: "2",
+    },
+    {
+      label: "收货地址管理",
+      key: "3",
+    },
+    {
+      type: "divider",
+    },
+    {
       label: "注销",
       key: "0",
     },
-    // {
-    //   label: <a href="https://www.aliyun.com">2nd menu item</a>,
-    //   key: "1",
-    // },
-    // {
-    //   type: "divider",
-    // },
-    // {
-    //   label: "3rd menu item",
-    //   key: "3",
-    // },
   ];
 
   const dropDownClick: MenuProps["onClick"] = ({ key }) => {
     if (key === "0") {
-      authCtx.onLogout();
+      onLogout();
       history("/auth");
+    } else {
+      message.info("该功能暂未开放");
     }
   };
 
@@ -79,13 +85,13 @@ const Nav = () => {
         items={menuItems}
         onClick={menuClick}
       />
-      {authCtx.isLoggedIn && (
+      {isLoggedIn && (
         <Dropdown
           menu={{ items: dropdownMenus, onClick: dropDownClick }}
           trigger={["click"]}
         >
           <Button type="link">
-            欢迎，{authCtx.user.username} <DownOutlined />
+            欢迎，{user.username} <DownOutlined />
           </Button>
         </Dropdown>
       )}

@@ -11,7 +11,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import java.util.List;
 
 @RestController
-@RequestMapping("/orders")
+@RequestMapping("/api/orders")
 public class OrderController {
     @Autowired
     OrderRepository orderRepository;
@@ -24,6 +24,7 @@ public class OrderController {
 
     @PostMapping
     public ResponseEntity<Order> createOrder(@RequestBody Order order) {
+        System.out.println("order: " + order);
         Order savedOrder = orderRepository.save(order);
         return new ResponseEntity<>(savedOrder, HttpStatus.CREATED);
     }
