@@ -22,7 +22,11 @@ function App() {
             <Nav />
 
             <Content
-              style={{ padding: "50px", minHeight: "85vh", margin: "0 120px" }}
+              style={{
+                padding: "10px 50px",
+                minHeight: "85vh",
+                margin: "0 120px",
+              }}
             >
               <Routes>
                 <Route path="/" element={<BookList />} />

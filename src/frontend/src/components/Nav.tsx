@@ -14,20 +14,20 @@ const Nav = () => {
 
   const menuItems: MenuProps["items"] = isLoggedIn
     ? [
-        {
-          key: "1",
-          label: "首页",
-        },
+        // {
+        //   key: "1",
+        //   label: "首页",
+        // },
         {
           key: "3",
           label: "订单",
         },
       ]
     : [
-        {
-          key: "1",
-          label: "首页",
-        },
+        // {
+        //   key: "1",
+        //   label: "首页",
+        // },
         {
           key: "2",
           label: "登录",
@@ -77,11 +77,11 @@ const Nav = () => {
 
   return (
     <Header style={{ display: "flex", alignItems: "center" }}>
-      <div className="demo-logo" />
+      <div className="demo-logo" onClick={(e) => history("/")} />
       <Menu
         theme="dark"
         mode="horizontal"
-        defaultSelectedKeys={["1"]}
+        // defaultSelectedKeys={["1"]}
         items={menuItems}
         onClick={menuClick}
       />

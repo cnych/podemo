@@ -1,23 +1,27 @@
 package com.youdianzhishi.orderservice.model;
 
+import com.fasterxml.jackson.core.type.TypeReference;
 import jakarta.persistence.*;
 import org.springframework.data.annotation.CreatedDate;
 import com.fasterxml.jackson.databind.ObjectMapper; // 使用Jackson库
 
 import java.io.IOException;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.Date;
 import java.util.List;
-
+import java.util.stream.Collectors;
 
 
 @Entity
 @Table(name = "orders")
-public class Order { 
-    final public static int ORDERED = 0;
-    final public static int PAID = 1;
-    final public static int CANCELLED = 2;
-    
+public class Order {
+    final public static int PENDING = 1;  // 订单状态：待付款
+    final public static int PAID = 2;  // 订单状态：已付款
+    final public static int DELIVERED = 3;  // 订单状态：已发货
+    final public static int COMPLETED = 4;  // 订单状态：已完成
+    final public static int CANCELLED = 5;  // 订单状态：已取消
+
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
     private Long id;
@@ -57,9 +61,19 @@ public class Order {
         this.books = books;
     }
 
-    public List<Long> getBookIds() throws IOException {
+    public List<BookQuantity> getBookQuantities() throws IOException {
+        // books 是一个字符串数组，现在我们要从该数组中解析获得 BookQuantity 列表
         ObjectMapper mapper = new ObjectMapper();
-        return Arrays.asList(mapper.readValue(books, Long[].class));
+        List<BookQuantity> list = mapper.readValue(this.getBooks(), new TypeReference<>() {
+        });
+        return list;
+    }
+
+    public List<Integer> getBookIds() throws IOException {
+        // books 是一个字符串数组，现在我们要从该数组中解析获得 id 列表
+        List<BookQuantity> list = this.getBookQuantities();
+        List<Integer> bookIds = list.stream().map(BookQuantity::getId).collect(Collectors.toList());
+        return bookIds;
     }
 
     public int getUserId() {
@@ -86,4 +100,14 @@ public class Order {
         this.status = status;
     }
 
+    @Override
+    public String toString() {
+        return "Order{" +
+                "id=" + id +
+                ", books='" + books + '\'' +
+                ", userId=" + userId +
+                ", orderDate=" + orderDate +
+                ", status=" + status +
+                '}';
+    }
 }

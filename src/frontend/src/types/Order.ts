@@ -1,10 +1,11 @@
+import CartItem from "./CartItem";
+
 interface Order {
-    id: number;
-    title: string;
-    cover_url: string;
-    price: number;
-    quantity: number;
-  }
-  
-  export default Order;
-  
+  id: number;
+  amount: number;
+  total: number;
+  status: number;
+  books: CartItem[];
+}
+
+export default Order;

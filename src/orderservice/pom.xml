@@ -47,7 +47,41 @@
 			<artifactId>spring-boot-starter-test</artifactId>
 			<scope>test</scope>
 		</dependency>
+
+		<dependency>
+			<groupId>io.netty</groupId>
+			<artifactId>netty-all</artifactId>
+			<version>4.1.95.Final</version>
+		</dependency>
+
 	</dependencies>
+
+	<profiles>
+		<profile>
+			<id>local</id>
+			<activation>
+				<os>
+					<!-- ${os.name} -->
+					<name>Mac OS</name>
+					<family>Mac</family>
+					<!-- ${os.arch} -->
+					<arch>aarch_64</arch>
+					<!-- ${os.version} -->
+					<version>13.3</version>
+				</os>
+			</activation>
+			<dependencies>
+				<dependency>
+					<groupId>io.netty</groupId>
+					<artifactId>netty-resolver-dns-native-macos</artifactId>
+					<version>${netty.version}</version>
+					<scope>runtime</scope>
+					<classifier>osx-aarch_64</classifier>
+				</dependency>
+			</dependencies>
+		</profile>
+	</profiles>
+
 
 	<build>
 		<plugins>

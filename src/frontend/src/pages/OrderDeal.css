@@ -1,0 +1,91 @@
+.deal-body {
+  margin-bottom: 100px;
+}
+.deal-body .hd {
+  color: #333;
+  font-size: 21px;
+  font-weight: 700;
+  margin: 40px 0 30px;
+}
+.deal-body .section {
+  margin-bottom: 20px;
+}
+.deal-body .section .title {
+  display: inline-block;
+  font-size: 15px;
+  color: #44883e;
+  border-bottom: 1px solid #44883e;
+  padding-bottom: 5px;
+  margin-bottom: 20px;
+}
+
+.price-tag {
+  color: #fa595f;
+}
+
+.deal-footer {
+  background-color: #f9f9f9;
+  margin-bottom: 0;
+  padding-bottom: 0;
+  position: fixed;
+  z-index: 10;
+  width: 100%;
+  left: 0;
+  right: 0;
+  bottom: 0;
+}
+.deal-footer .wrapper {
+  width: 1100px;
+  margin-left: auto;
+  margin-right: auto;
+  clear: both;
+  padding: 16px 0;
+  line-height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.deal-footer .left .footer-label:first-child {
+  padding-left: 0;
+}
+.deal-footer .left .footer-label {
+  display: inline-block;
+  padding: 0 25px;
+  position: relative;
+  line-height: 1.6;
+  font-size: 14px;
+  vertical-align: middle;
+}
+.deal-footer .left .footer-label em {
+  display: block;
+  color: #fa595f;
+  font-size: 15px;
+  font-style: initial;
+}
+.deal-footer .left .footer-label em.no-offset {
+  color: #ababac;
+  font-size: 13px;
+}
+
+.deal-footer .result {
+  font-size: 14px;
+  margin-bottom: 10px;
+}
+
+.deal-footer .result em {
+  font-style: initial;
+  margin: 0 10px;
+}
+
+.deal-footer .result .quantity {
+  font-weight: 500;
+  color: #fa595f;
+  margin-left: 5px;
+  margin-right: 5px;
+}
+.deal-footer .result .amount-real {
+  font-size: 18px;
+  font-weight: 500;
+  color: #fa595f;
+}

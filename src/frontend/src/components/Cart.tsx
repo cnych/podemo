@@ -40,7 +40,7 @@ export const Cart: React.FC = () => {
 
     const bookData = cart.map((item) => {
       return {
-        book_id: item.id,
+        id: item.id,
         quantity: item.quantity,
       };
     });

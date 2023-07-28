@@ -47,6 +47,7 @@ const getBookDetailHandler = (req, res) => {
 
 const getBookBatchHandler = (req, res) => {
   const { ids } = req.query;
+  console.log(req.query);
   const idsArray = ids.split(",").map((id) => parseInt(id));
   db.query(
     "SELECT id, title, cover_url, author, price, description FROM books WHERE id IN (?)",
