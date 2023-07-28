@@ -1,0 +1,27 @@
+.order-body .hd {
+  color: #333;
+  font-size: 21px;
+  font-weight: 700;
+  margin: 40px 0 30px;
+}
+
+.order-item {
+  margin-bottom: 80px;
+}
+.order-item-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin: 15px 0;
+}
+.order-item-footer {
+  float: right;
+  margin: 15px 0;
+}
+.order-item-footer span:first-child {
+  margin-right: 20px;
+}
+.order-item-footer span:first-child em {
+  font-style: initial;
+  color: #fa595f;
+}

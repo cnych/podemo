@@ -2,12 +2,14 @@ package com.youdianzhishi.orderservice.model;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import jakarta.persistence.*;
+import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.data.annotation.CreatedDate;
 import com.fasterxml.jackson.databind.ObjectMapper; // 使用Jackson库
+import org.springframework.web.reactive.function.client.WebClient;
+import reactor.core.publisher.Mono;
 
 import java.io.IOException;
-import java.util.Arrays;
-import java.util.Collections;
+import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -109,5 +111,44 @@ public class Order {
                 ", orderDate=" + orderDate +
                 ", status=" + status +
                 '}';
+    }
+
+    public OrderDto toOrderDto(WebClient webClient) throws Exception {
+        OrderDto orderDto = new OrderDto();
+        orderDto.setId(this.getId());
+        orderDto.setStatus(this.getStatus());
+        SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+        String strDate = formatter.format(this.getOrderDate());
+        orderDto.setOrderDate(strDate);
+
+        List<Integer> bookIds = this.getBookIds(); // 假设你有一个可以获取书籍ID的方法
+        // 将 bookIds 转换为字符串，以便于传递给 WebClient
+        String bookIdsStr = bookIds.stream().map(String::valueOf).collect(Collectors.joining(","));
+//            logger.debug("bookIdsStr: {}", bookIdsStr);
+        // 用 WebClient 调用批量查询书籍的服务接口
+        Mono<List<BookDto>> booksMono = webClient.get() // 假设你有一个webClient实例
+                .uri("http://localhost:8082/api/books/batch?ids=" + bookIdsStr)
+                .retrieve()
+                .bodyToMono(new ParameterizedTypeReference<>() {
+                });
+        List<BookDto> books = booksMono.block();
+
+        // 还需要将书籍数量和总价填充到 OrderDto 对象中
+        int totalAmount = 0;
+        int totalCount = 0;
+        List<BookQuantity> bqs = this.getBookQuantities();
+        for (BookDto book : books) {
+            // 如果 book.id 在 bqs 中，那么就将对应的数量设置到 book.quantity 中
+            int quantity = bqs.stream().filter(bq -> bq.getId() == book.getId()).findFirst().get().getQuantity();
+            book.setQuantity(quantity);
+            totalCount += quantity;
+            totalAmount += book.getPrice() * quantity;
+        }
+
+        orderDto.setBooks(books);
+        orderDto.setAmount(totalAmount);
+        orderDto.setTotal(totalCount);
+
+        return orderDto;
     }
 }

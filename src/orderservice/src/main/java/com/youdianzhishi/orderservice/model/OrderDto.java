@@ -1,5 +1,6 @@
 package com.youdianzhishi.orderservice.model;
 
+import java.util.Date;
 import java.util.List;
 
 public class OrderDto {
@@ -8,6 +9,7 @@ public class OrderDto {
     private int amount;
     private int total;
     private int status;
+    private String orderDate;
 
     public long getId() {
         return id;
@@ -47,5 +49,13 @@ public class OrderDto {
 
     public void setStatus(int status) {
         this.status = status;
+    }
+
+    public String getOrderDate() {
+        return orderDate;
+    }
+
+    public void setOrderDate(String orderDate) {
+        this.orderDate = orderDate;
     }
 }

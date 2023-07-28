@@ -1,5 +1,7 @@
 package com.youdianzhishi.orderservice.controller;
 
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.youdianzhishi.orderservice.OrderserviceApplication;
 import com.youdianzhishi.orderservice.model.*;
 import com.youdianzhishi.orderservice.repository.OrderRepository;
@@ -34,18 +36,26 @@ public class OrderController {
     private WebClient webClient;
 
     @GetMapping
-    public ResponseEntity<List<Order>> getAllOrders() {
-        List<Order> orders = orderRepository.findAll();
-        return new ResponseEntity<>(orders, HttpStatus.OK);
+    public ResponseEntity<List<OrderDto>> getAllOrders(HttpServletRequest request) {
+        User user = (User) request.getAttribute("user");
+        // 要根据 orderDate 倒序排列
+        List<Order> orders = orderRepository.findByUserIdOrderByOrderDateDesc(user.getId());
+        // 将Order转换为OrderDto
+        List<OrderDto> orderDtos = orders.stream().map(order -> {
+            try {
+                return order.toOrderDto(webClient);
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
+        }).collect(Collectors.toList());
+
+        return new ResponseEntity<>(orderDtos, HttpStatus.OK);
     }
 
     @PostMapping
     public ResponseEntity<Map<String, Long>> createOrder(@RequestBody Order order, HttpServletRequest request) {
         // 从拦截器中获取用户信息
         User user = (User) request.getAttribute("user");
-        if (user == null) {
-            return new ResponseEntity<>(HttpStatus.UNAUTHORIZED);
-        }
 
         // 设置订单的用户id
         order.setUserId(user.getId());
@@ -74,38 +84,8 @@ public class OrderController {
         // 根据订单中的书籍id，批量调用图书服务获取书籍信息
         // 需要得到书籍列表、总数、总价
         // 创建 OrderDto 对象并填充数据
-        OrderDto orderDto = new OrderDto();
-        orderDto.setId(order.getId());
-        orderDto.setStatus(order.getStatus());
         try {
-            List<Integer> bookIds = order.getBookIds(); // 假设你有一个可以获取书籍ID的方法
-            // 将 bookIds 转换为字符串，以便于传递给 WebClient
-            String bookIdsStr = bookIds.stream().map(String::valueOf).collect(Collectors.joining(","));
-            logger.debug("bookIdsStr: {}", bookIdsStr);
-            // 用 WebClient 调用批量查询书籍的服务接口
-            Mono<List<BookDto>> booksMono = webClient.get() // 假设你有一个webClient实例
-                    .uri("http://localhost:8082/api/books/batch?ids=" + bookIdsStr)
-                    .retrieve()
-                    .bodyToMono(new ParameterizedTypeReference<>() {
-                    });
-            List<BookDto> books = booksMono.block();
-
-            // 还需要将书籍数量和总价填充到 OrderDto 对象中
-            int totalAmount = 0;
-            int totalCount = 0;
-            List<BookQuantity> bqs = order.getBookQuantities();
-            for (BookDto book : books) {
-                // 如果 book.id 在 bqs 中，那么就将对应的数量设置到 book.quantity 中
-                int quantity = bqs.stream().filter(bq -> bq.getId() == book.getId()).findFirst().get().getQuantity();
-                book.setQuantity(quantity);
-                totalCount += quantity;
-                totalAmount += book.getPrice() * quantity;
-            }
-
-            orderDto.setBooks(books);
-            orderDto.setAmount(totalAmount);
-            orderDto.setTotal(totalCount);
-
+            OrderDto orderDto = order.toOrderDto(webClient);
             return new ResponseEntity<>(orderDto, HttpStatus.OK);
         } catch (Exception e) {
             logger.error("Fetch books info error: {}", e.getMessage());
@@ -114,9 +94,69 @@ public class OrderController {
 
     }
 
-    @GetMapping("/users/{userId}/orders")
-    public ResponseEntity<List<Order>> getOrdersByUserId(@PathVariable int userId) {
-        List<Order> orders = orderRepository.findByUserId(userId);
-        return new ResponseEntity<>(orders, HttpStatus.OK);
+    @PutMapping("/{orderId}/cancel")
+    public ResponseEntity cancelOrder(@PathVariable Long orderId, HttpServletRequest request) {
+        // 从拦截器中获取用户信息
+        User user = (User) request.getAttribute("user");
+
+        Order order = orderRepository.findById(orderId).orElse(null);
+        if (order == null) {
+            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+        }
+
+        if (order.getUserId() != user.getId()) {
+            return new ResponseEntity<>("该订单不属于当前用户", HttpStatus.FORBIDDEN);
+        }
+
+        if (order.getStatus() != Order.PENDING) {
+            return new ResponseEntity<>("只有未发货的订单才能取消", HttpStatus.BAD_REQUEST);
+        }
+
+        // 设置订单状态为已取消
+        order.setStatus(Order.CANCELLED);
+        orderRepository.save(order);
+        return new ResponseEntity<>("Ok", HttpStatus.OK);
+    }
+
+    @DeleteMapping("/{orderId}")
+    public ResponseEntity deleteOrder(@PathVariable Long orderId, HttpServletRequest request) {
+        // 从拦截器中获取用户信息
+        User user = (User) request.getAttribute("user");
+
+        Order order = orderRepository.findById(orderId).orElse(null);
+        if (order == null) {
+            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+        }
+
+        if (order.getUserId() != user.getId()) {
+            return new ResponseEntity<>("该订单不属于当前用户", HttpStatus.FORBIDDEN);
+        }
+
+        if (order.getStatus() != Order.CANCELLED) {
+            return new ResponseEntity<>("只有已取消的订单才能删除", HttpStatus.BAD_REQUEST);
+        }
+
+        orderRepository.deleteById(orderId);
+        return new ResponseEntity<>("Ok", HttpStatus.OK);
+    }
+
+    @PostMapping("/{orderId}/status/{status}")
+    public ResponseEntity updateStatus(@PathVariable Long orderId, @PathVariable int status, HttpServletRequest request) {
+        // 从拦截器中获取用户信息
+        User user = (User) request.getAttribute("user");
+
+        Order order = orderRepository.findById(orderId).orElse(null);
+        if (order == null) {
+            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+        }
+
+        if (order.getUserId() != user.getId()) {
+            return new ResponseEntity<>("该订单不属于当前用户", HttpStatus.FORBIDDEN);
+        }
+
+        order.setStatus(status);
+        orderRepository.save(order);
+        return new ResponseEntity<>("Ok", HttpStatus.OK);
+
     }
 }

@@ -4,7 +4,6 @@ import { Layout } from "antd";
 import { Auth } from "./pages/Auth";
 import { Order } from "./pages/Order";
 import { OrderDeal } from "./pages/OrderDeal";
-import { Cart } from "./components/Cart";
 import BookList from "./components/BookList";
 import Nav from "./components/Nav";
 import { AuthProvider } from "./context/AuthContext";
@@ -31,7 +30,7 @@ function App() {
               <Routes>
                 <Route path="/" element={<BookList />} />
                 <Route path="/auth" element={<Auth />} />
-                <Route path="/cart" element={<Cart />} />
+                {/* <Route path="/cart" element={<Cart />} /> */}
                 <Route path="/order" element={<Order />} />
                 <Route path="/order/:id" element={<OrderDeal />} />
               </Routes>
