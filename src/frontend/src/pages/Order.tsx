@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from "react";
 import type { TabsProps } from "antd";
-import { Tabs, Table, message, Tag, Empty, Button } from "antd";
-import { useNavigate } from "react-router-dom";
+import { Tabs, message, Empty, Button } from "antd";
+import { Link, useNavigate } from "react-router-dom";
 import StickyBox from "react-sticky-box";
 import axios from "axios";
+import OrderAction from "../components/OrderAction";
+import OrderTable from "../components/OrderTable";
 import { useAuth } from "../hooks/useAuth";
 import { OrderStatus } from "../types/Enum";
 import "./Order.css";
@@ -11,6 +13,7 @@ import "./Order.css";
 export const Order: React.FC = () => {
   const history = useNavigate();
   const [orderList, setOrderList] = useState([]); // 订单列表
+  const [needRefresh, setNeedRefresh] = useState(false); // 是否需要刷新订单列表
   const { user, isLoading } = useAuth();
 
   useEffect(() => {
@@ -25,54 +28,24 @@ export const Order: React.FC = () => {
               "Content-Type": "application/json",
             },
           });
-          console.log(res);
-          if (res.data) {
-            setOrderList(res.data);
-          }
+          setOrderList(res.data);
         } catch (err: any) {
+          if (err.response && err.response.status === 401) {
+            message.error("请先登录");
+            history("/auth");
+            return;
+          }
           console.log(err);
           message.error("获取订单列表失败");
         }
+      } else {
+        message.error("请先登录");
+        history("/auth");
+        return;
       }
     };
     getOrderList();
-  }, [user, isLoading]);
-
-  const columns = [
-    {
-      title: "书名",
-      dataIndex: "title",
-      key: "title",
-      render: (_: any, record: any) => {
-        return (
-          <div className="cart-item">
-            <img src={record.cover_url} alt={record.title} />
-            <span>{record.title}</span>
-          </div>
-        );
-      },
-    },
-    {
-      title: "单价（元）",
-      dataIndex: "price",
-      key: "price",
-      render: (price: any) => `￥${(price / 100).toFixed(2)}`,
-    },
-    {
-      title: "数量",
-      dataIndex: "quantity",
-      key: "quantity",
-    },
-    {
-      title: "小计（元）",
-      key: "amount",
-      render: (_: any, record: any) => (
-        <span className="price-tag">
-          ￥{((record.price * record.quantity) / 100).toFixed(2)}
-        </span>
-      ),
-    },
-  ];
+  }, [user, isLoading, needRefresh, history]);
 
   const renderOrderList = (orders: any[]) => {
     if (orders.length === 0) {
@@ -84,42 +57,25 @@ export const Order: React.FC = () => {
         </Empty>
       );
     }
-    const renderStatus = (status: number) => {
-      switch (status) {
-        case OrderStatus.Pending:
-          return <Tag color="red">待支付</Tag>;
-        case OrderStatus.Paid:
-          return <Tag color="gold">待发货</Tag>;
-        case OrderStatus.Deliverd:
-          return <Tag color="lime">已发货</Tag>;
-        case OrderStatus.Completed:
-          return <Tag color="green">已完成</Tag>;
-        case OrderStatus.Canceled:
-          return <Tag color="volcano">已取消</Tag>;
-        default:
-          return <Tag>未知状态</Tag>;
-      }
+
+    const triggerRefresh = () => {
+      setNeedRefresh(!needRefresh);
     };
 
     return orders.map((order: any) => {
       return (
         <div className="order-item" key={order.id}>
           <div className="order-item-header">
-            <span>订单编号：{order.id}</span>
+            <span>
+              订单编号：
+              <Link to={`/order/${order.id}`}>{order.id}</Link>
+            </span>
             <span>下单时间：{order.orderDate}</span>
           </div>
           <div className="order-item-body">
-            <Table
-              key={order.id}
-              columns={columns}
-              dataSource={order.books}
-              pagination={false}
-            />
+            <OrderTable order={order} />
             <div className="order-item-footer">
-              <span>
-                总金额：<em>￥{(order.amount / 100).toFixed(2)}</em>
-              </span>
-              <span>订单状态：{renderStatus(order.status)}</span>
+              <OrderAction order={order} triggerRefresh={triggerRefresh} />
             </div>
           </div>
         </div>
@@ -166,7 +122,7 @@ export const Order: React.FC = () => {
 
   const renderTabBar: TabsProps["renderTabBar"] = (props, DefaultTabBar) => (
     <StickyBox offsetTop={0} offsetBottom={20} style={{ zIndex: 1 }}>
-      <DefaultTabBar {...props} />
+      <DefaultTabBar {...props} style={{ background: "#f5f5f5" }} />
     </StickyBox>
   );
 

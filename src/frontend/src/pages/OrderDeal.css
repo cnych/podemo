@@ -13,8 +13,8 @@
 .deal-body .section .title {
   display: inline-block;
   font-size: 15px;
-  color: #44883e;
-  border-bottom: 1px solid #44883e;
+  color: #fa595f;
+  border-bottom: 1px solid #fa595f;
   padding-bottom: 5px;
   margin-bottom: 20px;
 }
@@ -66,26 +66,4 @@
 .deal-footer .left .footer-label em.no-offset {
   color: #ababac;
   font-size: 13px;
-}
-
-.deal-footer .result {
-  font-size: 14px;
-  margin-bottom: 10px;
-}
-
-.deal-footer .result em {
-  font-style: initial;
-  margin: 0 10px;
-}
-
-.deal-footer .result .quantity {
-  font-weight: 500;
-  color: #fa595f;
-  margin-left: 5px;
-  margin-right: 5px;
-}
-.deal-footer .result .amount-real {
-  font-size: 18px;
-  font-weight: 500;
-  color: #fa595f;
 }

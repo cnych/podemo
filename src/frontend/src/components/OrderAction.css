@@ -1,0 +1,25 @@
+.order-action.result {
+  font-size: 14px;
+  margin-bottom: 10px;
+}
+
+.order-action .result em {
+  font-style: initial;
+  margin: 0 5px;
+}
+
+.order-action .result em:last-child {
+  margin-right: 10px;
+}
+
+.order-action .result .quantity {
+  font-weight: 500;
+  color: #fa595f;
+  margin-left: 5px;
+  margin-right: 5px;
+}
+.order-action .result .amount-real {
+  font-size: 18px;
+  font-weight: 500;
+  color: #fa595f;
+}

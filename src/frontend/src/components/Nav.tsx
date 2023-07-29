@@ -1,36 +1,42 @@
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import type { MenuProps } from "antd";
+import type { ItemType } from "antd/es/menu/hooks/useItems";
 import { Layout, Menu, Dropdown, Button, message } from "antd";
 import { DownOutlined } from "@ant-design/icons";
 import { useAuth } from "../hooks/useAuth";
 import "./Nav.css";
 
 const { Header } = Layout;
+type MenuItemWithPath = ItemType & { path: string };
 
 const Nav = () => {
   const history = useNavigate();
+  const location = useLocation();
   const { isLoggedIn, user, onLogout } = useAuth();
-  // const authCtx = useContext(AuthContext);
 
-  const menuItems: MenuProps["items"] = isLoggedIn
+  const menuItems: MenuItemWithPath[] = isLoggedIn
     ? [
-        // {
-        //   key: "1",
-        //   label: "首页",
-        // },
+        {
+          key: "1",
+          label: "首页",
+          path: "/",
+        },
         {
           key: "3",
           label: "订单",
+          path: "/order",
         },
       ]
     : [
-        // {
-        //   key: "1",
-        //   label: "首页",
-        // },
+        {
+          key: "1",
+          label: "首页",
+          path: "/",
+        },
         {
           key: "2",
           label: "登录",
+          path: "/auth",
         },
       ];
 
@@ -75,14 +81,20 @@ const Nav = () => {
     }
   };
 
+  // const pathParts = location.pathname.split("/").filter(Boolean);
+  const selectedKey = menuItems
+    .find((item) => item.path === location.pathname)
+    ?.key?.toString();
+  const selectedKeys = selectedKey ? [selectedKey] : [];
+
   return (
     <Header style={{ display: "flex", alignItems: "center" }}>
       <div className="demo-logo" onClick={(e) => history("/")} />
       <Menu
         theme="dark"
         mode="horizontal"
-        // defaultSelectedKeys={["1"]}
-        items={menuItems}
+        selectedKeys={selectedKeys}
+        items={menuItems.map(({ path, ...item }) => item)}
         onClick={menuClick}
       />
       {isLoggedIn && (
