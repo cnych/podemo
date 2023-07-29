@@ -20,7 +20,7 @@ services:
     environment:
       - DATABASE_URI=otel:otel321@tcp(db:3306)/bookdb?parseTime=true
     depends_on:
-      - mysql
+      - db
 
   catalogservice:
     build:
@@ -28,8 +28,9 @@ services:
       dockerfile: Dockerfile
     environment:
       - DB_HOST=db
+      - USER_SERVICE_URL=http://userservice:8080
     depends_on:
-      - mysql
+      - db
       - userservice
 
   orderservice:
@@ -38,10 +39,11 @@ services:
       dockerfile: Dockerfile
     environment:
       - DB_HOST=db
-      - CATALOG_SERVICE_URL=http://catalogservice:8082
+      - DB_PORT=3306
       - USER_SERVICE_URL=http://userservice:8080
+      - CATALOG_SERVICE_URL=http://catalogservice:8082
     depends_on:
-      - mysql
+      - db
       - userservice
       - catalogservice
 
@@ -51,8 +53,9 @@ services:
       dockerfile: Dockerfile
     environment:
       - SQLALCHEMY_DATABASE_URI=mysql+pymysql://otel:otel321@db/bookdb
+      - USER_SERVICE_URL=http://userservice:8080
     depends_on:
-      - mysql
+      - db
       - userservice
       - catalogservice
       - orderservice

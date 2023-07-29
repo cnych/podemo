@@ -1,10 +1,10 @@
 package com.youdianzhishi.orderservice.model;
 
 import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.persistence.*;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.data.annotation.CreatedDate;
-import com.fasterxml.jackson.databind.ObjectMapper; // 使用Jackson库
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
 

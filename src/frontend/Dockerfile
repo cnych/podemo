@@ -1,5 +1,5 @@
 # 使用官方的 node 镜像作为基础镜像
-FROM gcr.dockerproxy.com/distroless/nodejs
+FROM node:16 AS builder
 
 # 在容器内部设置工作目录
 WORKDIR /app
@@ -20,7 +20,7 @@ RUN npm run build
 FROM nginx:1.19-alpine
 
 # 将从 build 阶段复制生成的静态文件到 nginx 容器的静态文件托管目录
-COPY --from=0 /app/build /usr/share/nginx/html
+COPY --from=builder /app/build /usr/share/nginx/html
 
 # 使用自定义的 nginx 配置文件
 COPY nginx.conf /etc/nginx/conf.d/default.conf

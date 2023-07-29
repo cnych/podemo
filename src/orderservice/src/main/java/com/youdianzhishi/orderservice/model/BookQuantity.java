@@ -1,7 +1,5 @@
 package com.youdianzhishi.orderservice.model;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
-
 public class BookQuantity {
     private int id;
     private int quantity;

@@ -1,6 +1,5 @@
 package com.youdianzhishi.orderservice.model;
 
-import java.util.Date;
 import java.util.List;
 
 public class OrderDto {
