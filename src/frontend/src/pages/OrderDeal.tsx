@@ -22,15 +22,12 @@ export const OrderDeal: React.FC = () => {
       if (isLoading) return;
       if (user && user.token) {
         try {
-          const res = await axios.get(
-            `http://localhost:8081/api/orders/${id}`,
-            {
-              headers: {
-                Authorization: `Bearer ${user.token}`,
-                "Content-Type": "application/json",
-              },
-            }
-          );
+          const res = await axios.get(`/api/order/orders/${id}`, {
+            headers: {
+              Authorization: `Bearer ${user.token}`,
+              "Content-Type": "application/json",
+            },
+          });
           setOrder(res.data);
         } catch (err: any) {
           console.log(err);

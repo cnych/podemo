@@ -17,7 +17,7 @@ function BookList() {
   useEffect(() => {
     // 调用获取书籍列表的接口
     const fetchBooks = async () => {
-      const res = await axios.get("http://localhost:8082/api/books");
+      const res = await axios.get("/api/catalog/books");
       setBooks(res.data as Book[]);
     };
 

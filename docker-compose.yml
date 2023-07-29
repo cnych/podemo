@@ -1,6 +1,6 @@
 version: "3.7"
 services:
-  mysql:
+  db:
     image: mysql:8.0.33
     environment:
       MYSQL_ROOT_PASSWORD: root321
@@ -9,11 +9,60 @@ services:
       MYSQL_PASSWORD: otel321
     volumes:
       - mysql_data:/var/lib/mysql
+      - ./initdb.sql:/docker-entrypoint-initdb.d/initdb.sql # MySQL 官方镜像支持在首次启动时自动执行 /docker-entrypoint-initdb.d/ 目录下的 SQL 文件
     ports:
       - "3306:3306"
-  redis:
-    image: redis:6-alpine
+
+  userservice:
+    build:
+      context: ./src/userservice
+      dockerfile: Dockerfile
+    environment:
+      - DATABASE_URI=otel:otel321@tcp(db:3306)/bookdb?parseTime=true
+    depends_on:
+      - mysql
+
+  catalogservice:
+    build:
+      context: ./src/catalogservice
+      dockerfile: Dockerfile
+    environment:
+      - DB_HOST=db
+    depends_on:
+      - mysql
+      - userservice
+
+  orderservice:
+    build:
+      context: ./src/orderservice
+      dockerfile: Dockerfile
+    environment:
+      - DB_HOST=db
+      - CATALOG_SERVICE_URL=http://catalogservice:8082
+      - USER_SERVICE_URL=http://userservice:8080
+    depends_on:
+      - mysql
+      - userservice
+      - catalogservice
+
+  payservice:
+    build:
+      context: ./src/paymentservice
+      dockerfile: Dockerfile
+    environment:
+      - SQLALCHEMY_DATABASE_URI=mysql+pymysql://otel:otel321@db/bookdb
+    depends_on:
+      - mysql
+      - userservice
+      - catalogservice
+      - orderservice
+
+  frontend:
+    build:
+      context: ./src/frontend
+      dockerfile: Dockerfile
     ports:
-      - "6379:6379"
+      - "80:80"
+
 volumes:
   mysql_data:

@@ -47,7 +47,7 @@ export const Cart: React.FC = () => {
 
     axios
       .post(
-        "http://localhost:8081/api/orders",
+        "/api/order/orders",
         {
           books: JSON.stringify(bookData),
         },

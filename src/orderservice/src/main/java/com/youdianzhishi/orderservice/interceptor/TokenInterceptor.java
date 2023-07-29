@@ -28,8 +28,11 @@ public class TokenInterceptor implements HandlerInterceptor {
             return false;
         }
         try {
+            // 从环境变量中获取 userServiceUrl
+            String userServiceEnv = System.getenv("USER_SERVICE_URL");
+            String userServiceUrl = userServiceEnv != null ? userServiceEnv : "http://localhost:8080";
             User user = webClient.get()
-                    .uri("http://localhost:8080/api/userinfo")
+                    .uri(userServiceUrl + "/api/userinfo")
                     .header(HttpHeaders.AUTHORIZATION, token)
                     .retrieve()
                     .onStatus(httpStatus -> httpStatus.equals(HttpStatus.UNAUTHORIZED), clientResponse ->

@@ -20,12 +20,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     if (user.token) {
       loginHandler(user);
     }
+    setIsLoading(false); // 表示没有在加载用户信息了
   }, []);
 
   const loginHandler = (user: User) => {
     setIsLoggedIn(true);
     setUser(user);
-    setIsLoading(false); // 表示没有在加载用户信息了
     // 保存 user 到 localStorage
     localStorage.setItem("user", JSON.stringify(user));
   };

@@ -20,8 +20,8 @@ const OrderAction: React.FC<{ order: Order; triggerRefresh?: () => void }> = ({
     if (isLoading) return;
     if (user && user.token) {
       try {
-        const res = await axios.put(
-          `http://localhost:8081/api/orders/${order.id}/cancel`,
+        await axios.put(
+          `/api/order/orders/${order.id}/cancel`,
           {},
           {
             headers: {
@@ -48,15 +48,12 @@ const OrderAction: React.FC<{ order: Order; triggerRefresh?: () => void }> = ({
     if (isLoading) return;
     if (user && user.token) {
       try {
-        const res = await axios.delete(
-          `http://localhost:8081/api/orders/${order.id}`,
-          {
-            headers: {
-              Authorization: `Bearer ${user.token}`,
-              "Content-Type": "application/json",
-            },
-          }
-        );
+        await axios.delete(`/api/order/orders/${order.id}`, {
+          headers: {
+            Authorization: `Bearer ${user.token}`,
+            "Content-Type": "application/json",
+          },
+        });
         message.success("订单删除成功");
         triggerRefresh && triggerRefresh();
         history("/order");
@@ -76,8 +73,8 @@ const OrderAction: React.FC<{ order: Order; triggerRefresh?: () => void }> = ({
     if (user && user.token) {
       setPayLoading(true);
       try {
-        const res = await axios.post(
-          `http://localhost:8083/api/payments`,
+        await axios.post(
+          `/api/pay/payments`,
           {
             order_id: order?.id,
             amount: order?.amount,

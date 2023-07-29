@@ -1,3 +1,4 @@
+import os
 import random
 import time
 import requests
@@ -7,7 +8,8 @@ from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
 
 app = Flask(__name__)
-app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+pymysql://otel:otel321@localhost/bookdb'
+app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('SQLALCHEMY_DATABASE_URI')
+# app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+pymysql://otel:otel321@localhost/bookdb'
 CORS(app)
 
 db = SQLAlchemy(app)
@@ -48,15 +50,12 @@ def create_payment():
      
     # TODO：应该发送消息到消息队列，通知订单服务更新订单状态
     # 这里为了方便，直接调用订单服务的 API 来处理
-    requests.post('http://localhost:8081/api/orders/{}/status/{}'.format(order_id, 2),
+    requests.post('{}/api/orders/{}/status/{}'.format(os.getenv("ORDER_SERVICE_URL"), order_id, 2),
         headers={
             "Authorization": token
         }
     )
     # TODO：记录日志
-            
-    
-    
     
     return jsonify({'id': payment.id}), 201
 

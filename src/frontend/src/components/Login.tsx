@@ -14,7 +14,7 @@ const Login = (props: { switchLogin: () => void }) => {
   const onFinish = (values: any) => {
     setLoading(true);
     axios
-      .post("http://localhost:8080/api/login", values)
+      .post("/api/user/login", values)
       .then((res) => {
         console.log("login res：", res);
         const userInfo = res.data; // {id: 1, token: "M", username: "admin"}
@@ -54,6 +54,7 @@ const Login = (props: { switchLogin: () => void }) => {
           rules={[{ required: true, message: "请输入用户名!" }]}
         >
           <Input
+            size="large"
             prefix={<UserOutlined className="site-form-item-icon" />}
             placeholder="用户名"
           />
@@ -64,6 +65,7 @@ const Login = (props: { switchLogin: () => void }) => {
           rules={[{ required: true, message: "请输入密码!" }]}
         >
           <Input
+            size="large"
             prefix={<LockOutlined className="site-form-item-icon" />}
             type="password"
             placeholder="密码"
@@ -73,6 +75,7 @@ const Login = (props: { switchLogin: () => void }) => {
           <Button
             type="primary"
             block
+            size="large"
             htmlType="submit"
             className="login-form-button"
             loading={loading}

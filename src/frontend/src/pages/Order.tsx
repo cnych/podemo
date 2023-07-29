@@ -20,9 +20,10 @@ export const Order: React.FC = () => {
     // 获取订单列表
     const getOrderList = async () => {
       if (isLoading) return;
+      console.log("user：", user);
       if (user && user.token) {
         try {
-          const res = await axios.get(`http://localhost:8081/api/orders`, {
+          const res = await axios.get(`/api/order/orders`, {
             headers: {
               Authorization: `Bearer ${user.token}`,
               "Content-Type": "application/json",

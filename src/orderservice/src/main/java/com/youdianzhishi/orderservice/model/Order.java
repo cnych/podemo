@@ -126,8 +126,11 @@ public class Order {
         String bookIdsStr = bookIds.stream().map(String::valueOf).collect(Collectors.joining(","));
 //            logger.debug("bookIdsStr: {}", bookIdsStr);
         // 用 WebClient 调用批量查询书籍的服务接口
+        // 从环境变量中获取 bookServiceUrl
+        String catalogServiceEnv = System.getenv("CATALOG_SERVICE_URL");
+        String catalogServiceUrl = catalogServiceEnv != null ? catalogServiceEnv : "http://localhost:8082";
         Mono<List<BookDto>> booksMono = webClient.get() // 假设你有一个webClient实例
-                .uri("http://localhost:8082/api/books/batch?ids=" + bookIdsStr)
+                .uri(catalogServiceUrl + "/api/books/batch?ids=" + bookIdsStr)
                 .retrieve()
                 .bodyToMono(new ParameterizedTypeReference<>() {
                 });

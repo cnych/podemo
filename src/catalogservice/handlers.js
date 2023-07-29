@@ -1,10 +1,11 @@
 const mysql = require("mysql");
 
 const db = mysql.createConnection({
-  host: "localhost",
-  user: "otel",
-  password: "otel321",
-  database: "bookdb",
+  // 从环境变量中读取数据库连接信息
+  host: process.env.DB_HOST || "localhost",
+  user: process.env.DB_USER || "otel",
+  password: process.env.DB_PASSWORD || "otel321",
+  database: process.env.DB_NAME || "bookdb",
 });
 
 db.connect((err) => {
