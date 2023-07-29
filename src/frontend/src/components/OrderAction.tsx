@@ -15,7 +15,6 @@ const OrderAction: React.FC<{ order: Order; triggerRefresh?: () => void }> = ({
   const history = useNavigate();
   const { user, isLoading } = useAuth();
   const [payLoading, setPayLoading] = useState(false); // 用于标记是否正在支付
-  // const authCtx = useContext(AuthContext);
 
   const confirmCancel = async () => {
     if (isLoading) return;
@@ -31,13 +30,9 @@ const OrderAction: React.FC<{ order: Order; triggerRefresh?: () => void }> = ({
             },
           }
         );
-        if (res.data) {
-          message.success("取消订单成功");
-          triggerRefresh && triggerRefresh();
-          history("/order");
-        } else {
-          message.error("取消订单失败");
-        }
+        message.success("取消订单成功");
+        triggerRefresh && triggerRefresh();
+        history("/order");
       } catch (err: any) {
         console.log(err);
         message.error("取消订单失败");
@@ -62,13 +57,9 @@ const OrderAction: React.FC<{ order: Order; triggerRefresh?: () => void }> = ({
             },
           }
         );
-        if (res.data) {
-          message.success("订单删除成功");
-          triggerRefresh && triggerRefresh();
-          history("/order");
-        } else {
-          message.error("订单删除失败");
-        }
+        message.success("订单删除成功");
+        triggerRefresh && triggerRefresh();
+        history("/order");
       } catch (err: any) {
         console.log(err);
         message.error("订单删除失败");
@@ -99,14 +90,9 @@ const OrderAction: React.FC<{ order: Order; triggerRefresh?: () => void }> = ({
             },
           }
         );
-        if (res.data) {
-          message.success("支付成功");
-          triggerRefresh && triggerRefresh();
-          history("/order");
-        } else {
-          console.log(res);
-          message.error("支付失败");
-        }
+        message.success("支付成功");
+        triggerRefresh && triggerRefresh();
+        history("/order");
       } catch (err: any) {
         console.log(err);
         message.error("支付失败");
@@ -117,6 +103,10 @@ const OrderAction: React.FC<{ order: Order; triggerRefresh?: () => void }> = ({
       history("/auth");
       return;
     }
+  };
+
+  const handleReminder = async () => {
+    message.success("已催单");
   };
 
   const renderAction = () => {
@@ -176,7 +166,12 @@ const OrderAction: React.FC<{ order: Order; triggerRefresh?: () => void }> = ({
       return (
         <>
           <Tag color="gold">已支付，等待发货</Tag>
-          <Button type="primary" shape="round" style={{ margin: "0 10px" }}>
+          <Button
+            onClick={handleReminder}
+            type="primary"
+            shape="round"
+            style={{ margin: "0 10px" }}
+          >
             催单
           </Button>
         </>

@@ -1,6 +1,5 @@
 import { useEffect, useState } from "react";
 import { Button } from "antd";
-import { Link } from "react-router-dom";
 import { ShoppingCartOutlined } from "@ant-design/icons";
 import axios from "axios";
 
@@ -44,28 +43,20 @@ function BookList() {
           <li className="book-item" key={book.id}>
             <div className="inner">
               <div className="cover shadow-cover">
-                <Link to={`/books/${book.id}`} className="pic" target="_blank">
-                  <span className="cover-label"></span>
-                  <img src={book.cover_url} alt={book.title} />
-                </Link>
+                <span className="cover-label"></span>
+                <img src={book.cover_url} alt={book.title} />
               </div>
 
               <div className="info">
                 <h3 className="title">
-                  <Link
-                    to={`/books/${book.id}`}
-                    title={book.title}
-                    className="title-container"
-                  >
-                    <span className="title-text">{book.title}</span>
-                  </Link>
+                  <span className="title-text">{book.title}</span>
                 </h3>
                 <div className="author">
                   <span className="">{book.author}</span>
                 </div>
-                <Link to={`/books/${book.id}`} className="intro">
+                <div className="intro">
                   <span className="intro-text">{book.description}</span>
-                </Link>
+                </div>
                 <div className="actions">
                   <div className="actions-left">
                     <span className="sale">
