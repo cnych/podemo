@@ -54,6 +54,7 @@ services:
     environment:
       - SQLALCHEMY_DATABASE_URI=mysql+pymysql://otel:otel321@db/bookdb
       - USER_SERVICE_URL=http://userservice:8080
+      - ORDER_SERVICE_URL=http://orderservice:8081
     depends_on:
       - db
       - userservice
