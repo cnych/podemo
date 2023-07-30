@@ -52,3 +52,11 @@ book-app-userservice-1      "/app/main"              userservice         running
 在订单列表中可以查看到自己的订单：
 
 ![订单](./docs/img/app-order-list.png)
+
+如果想要更改代码，可以使用开发模式的 Docker Compose 文件来启动服务：
+
+```bash
+$ docker-compose -f docker-compose.dev.yml up
+```
+
+这样就可以在本地修改代码，而且修改代码后每个服务都会自动重启生效的，非常方便。然后直接在浏览器中访问 [http://localhost:3000](http://localhost:3000) 就可以看到修改后的效果了。

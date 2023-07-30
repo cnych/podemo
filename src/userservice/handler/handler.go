@@ -105,11 +105,11 @@ func UserInfoHandler(c *gin.Context) {
 
 	if claims, ok := token.Claims.(jwt.MapClaims); ok && token.Valid {
 		var userinfo UserInfo
-		err := db.QueryRow("SELECT id, username FROM users WHERE username = ?", claims["username"]).Scan(&userinfo.ID, &userinfo.Username)
-		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-			return
-		}
+		// Token 里面包含了用户的 ID 和 Username 信息
+		userinfo.ID = int(claims["id"].(float64))
+		userinfo.Username = claims["username"].(string)
+		userinfo.Token = bearerToken[1]
+
 		c.JSON(http.StatusOK, userinfo)
 	} else {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid token"})

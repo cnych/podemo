@@ -1,0 +1,82 @@
+version: "3.7"
+services:
+  db:
+    image: mysql:8.0.33
+    environment:
+      MYSQL_ROOT_PASSWORD: root321
+      MYSQL_DATABASE: bookdb
+      MYSQL_USER: otel
+      MYSQL_PASSWORD: otel321
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./initdb.sql:/docker-entrypoint-initdb.d/initdb.sql # MySQL 官方镜像支持在首次启动时自动执行 /docker-entrypoint-initdb.d/ 目录下的 SQL 文件
+    ports:
+      - "3306:3306"
+
+  userservice:
+    build:
+      context: ./src/userservice
+      dockerfile: Dockerfile.dev
+    environment:
+      - DATABASE_URI=otel:otel321@tcp(db:3306)/bookdb?parseTime=true
+    volumes:
+      - ./src/userservice:/src/app
+    depends_on:
+      - db
+
+  catalogservice:
+    build:
+      context: ./src/catalogservice
+      dockerfile: Dockerfile.dev
+    environment:
+      - DB_HOST=db
+      - USER_SERVICE_URL=http://userservice:8080
+    volumes:
+      - ./src/catalogservice:/usr/src/app
+    depends_on:
+      - db
+      - userservice
+
+  orderservice:
+    build:
+      context: ./src/orderservice
+      dockerfile: Dockerfile.dev
+    environment:
+      - DB_HOST=db
+      - DB_PORT=3306
+      - USER_SERVICE_URL=http://userservice:8080
+      - CATALOG_SERVICE_URL=http://catalogservice:8082
+    volumes:
+      - ./src/orderservice:/usr/src/app
+    depends_on:
+      - db
+      - userservice
+      - catalogservice
+
+  payservice:
+    build:
+      context: ./src/paymentservice
+      dockerfile: Dockerfile.dev
+    environment:
+      - SQLALCHEMY_DATABASE_URI=mysql+pymysql://otel:otel321@db/bookdb
+      - USER_SERVICE_URL=http://userservice:8080
+      - ORDER_SERVICE_URL=http://orderservice:8081
+    volumes:
+      - ./src/paymentservice:/usr/src/app
+    depends_on:
+      - db
+      - userservice
+      - catalogservice
+      - orderservice
+
+  frontend:
+    build:
+      context: ./src/frontend
+      dockerfile: Dockerfile.dev
+    volumes:
+      - ./src/frontend:/usr/src/app
+    ports:
+      - "3000:3000"
+
+volumes:
+  mysql_data:

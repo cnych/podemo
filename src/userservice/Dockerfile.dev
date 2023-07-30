@@ -1,0 +1,16 @@
+# Step 1: build the application
+FROM golang:1.19 as builder
+
+# Set the Current Working Directory inside the container
+WORKDIR /src/app
+
+# Copy everything from the current directory to the PWD (Present Working Directory) inside the container
+COPY . .
+
+# Build the Go app
+RUN export GOPROXY=https://goproxy.cn && go mod download && go install github.com/cosmtrek/air@latest
+
+# Expose the application on port 8080 (if necessary)
+EXPOSE 8080
+
+CMD [ "air", "--build.cmd", "go build -o bin/api main.go", "--build.bin", "./bin/api" ]

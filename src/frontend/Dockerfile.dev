@@ -1,0 +1,16 @@
+# 使用官方的 node 镜像作为基础镜像
+FROM node:16 AS builder
+
+# 在容器内部设置工作目录
+WORKDIR /usr/src/app
+
+# 将 package.json 和 package-lock.json (如果可用) 复制到工作目录
+COPY package*.json ./
+
+# 安装项目依赖
+RUN npm install --production --registry=https://registry.npm.taobao.org  
+
+# 将项目代码复制到工作目录
+COPY . .
+
+CMD ["npm", "start"]

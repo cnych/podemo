@@ -56,7 +56,6 @@ def create_payment():
         }
     )
     # TODO：记录日志
-    
     return jsonify({'id': payment.id}), 201
 
 
