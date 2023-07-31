@@ -1,4 +1,6 @@
 const mysql = require("mysql");
+const { SpanStatusCode } = require("@opentelemetry/api");
+const { tracer } = require("./tracer");
 
 const db = mysql.createConnection({
   // 从环境变量中读取数据库连接信息
@@ -14,13 +16,20 @@ db.connect((err) => {
 });
 
 const getBookListHandler = (req, res) => {
+  const span = tracer.startSpan("getBookList");
   db.query(
     "SELECT id, title, cover_url, author, price,description FROM books",
     (err, result) => {
       if (err) {
+        span.setStatus({
+          code: SpanStatusCode.ERROR,
+          message: err.message,
+        });
+        span.end();
         res.status(500).json({ error: err.message });
         return;
       }
+      span.end();
       res.json(result);
     }
   );
