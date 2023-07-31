@@ -1,0 +1,33 @@
+# otel-collector-config.yaml
+receivers: # 接收器，用于接收数据
+  jaeger: # Jaeger 协议接收器
+    protocols: # 定义接收器支持的协议
+      thrift_http: # 通过 Jaeger Thrift HTTP 协议接收数据
+        endpoint: "0.0.0.0:14278" # 定义 Jaeger Thrift HTTP 接收地址
+  otlp: # OpenTelemetry 协议接收器
+    protocols: # 定义接收器支持的协议
+      grpc: # 通过 gRPC 协议接收数据
+      http: # 通过 HTTP 协议接收数据
+        cors: # 跨域配置
+          allowed_origins: # 允许的域名
+            - http://*
+            - https://*
+
+exporters: # 导出器，用于导出数据
+  jaeger:
+    endpoint: "jaeger:14250" # 使用 jaeger 容器名称
+    tls:
+      insecure: true # 不使用 TLS
+
+processors: # 处理器
+  batch: # 批处理配置
+
+service: # 服务配置
+  telemetry: # 采集器自身的一些遥测配置
+    logs:
+      level: "debug" # 日志级别
+  pipelines: # 管道配置
+    traces: # 链路追踪配置
+      receivers: [otlp, jaeger] # 接收器
+      exporters: [jaeger] # 导出器
+      processors: [batch] # 处理器
