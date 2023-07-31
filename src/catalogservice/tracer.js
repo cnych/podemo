@@ -14,6 +14,9 @@ const {
 } = require("@opentelemetry/instrumentation-express");
 const { HttpInstrumentation } = require("@opentelemetry/instrumentation-http");
 const { JaegerExporter } = require("@opentelemetry/exporter-jaeger");
+const {
+  OTLPTraceExporter,
+} = require("@opentelemetry/exporter-trace-otlp-http");
 
 // 初始化 tracer provider
 const provider = new NodeTracerProvider({
@@ -27,8 +30,11 @@ new ExpressInstrumentation().setTracerProvider(provider);
 new HttpInstrumentation().setTracerProvider(provider);
 
 // 初始化 Jaeger exporter，并添加到 provider 中
-const exporter = new JaegerExporter({
-  endpoint: "http://otel-collector:14278/api/traces",
+// const exporter = new JaegerExporter({
+//   endpoint: "http://otel-collector:14278/api/traces",
+// });
+const exporter = new OTLPTraceExporter({
+  url: "http://otel-collector:4318/v1/traces", // OTLP HTTP endpoint，可以省略，默认为 http://localhost:4318/v1/traces
 });
 
 // 导出 span 到 Jaeger：生产环境下推荐使用 BatchSpanProcessor
