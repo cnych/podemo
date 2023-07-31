@@ -4,7 +4,7 @@ import { Layout } from "antd";
 import { Auth } from "./pages/Auth";
 import { Order } from "./pages/Order";
 import { OrderDeal } from "./pages/OrderDeal";
-import BookList from "./components/BookList";
+import { BookList } from "./pages/BookList";
 import Nav from "./components/Nav";
 import { AuthProvider } from "./context/AuthContext";
 import { CartProvider } from "./context/CartContext";

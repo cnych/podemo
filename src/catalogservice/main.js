@@ -1,6 +1,6 @@
 const express = require("express");
 const cors = require("cors");
-
+const { tracer } = require("./tracer");
 const {
   getBookListHandler,
   getBookDetailHandler,

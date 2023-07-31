@@ -6,15 +6,16 @@ import axios from "axios";
 import Book from "../types/Book";
 import CartItem from "../types/CartItem";
 import { useCart } from "../hooks/useCart";
-import CheckoutButton from "./CheckoutButton";
+import CheckoutButton from "../components/CheckoutButton";
 import "./BookList.css";
 
-function BookList() {
+export const BookList: React.FC = () => {
   // const history = useNavigate();
   const [books, setBooks] = useState<Book[]>([]);
   const { cart, addBookToCart, increaseQuantity, decreaseQuantity } = useCart();
 
   useEffect(() => {
+    console.log("BookList useEffect");
     // 调用获取书籍列表的接口
     const fetchBooks = async () => {
       const res = await axios.get("/api/catalog/books");
@@ -104,6 +105,4 @@ function BookList() {
       })}
     </ul>
   );
-}
-
-export default BookList;
+};

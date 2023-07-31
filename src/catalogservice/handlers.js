@@ -29,6 +29,12 @@ const getBookListHandler = (req, res) => {
         res.status(500).json({ error: err.message });
         return;
       }
+      span.setAttribute("book.count", result.length);
+      span.addEvent("Got book list");
+      span.setStatus({
+        code: SpanStatusCode.OK,
+        message: "Success",
+      });
       span.end();
       res.json(result);
     }
