@@ -27,15 +27,15 @@ const provider = new NodeTracerProvider({
   }),
 });
 
-registerInstrumentations({
-  tracerProvider: provider,
-  instrumentations: [
-    // 启用 Express 和 HTTP 两个 instrumentations
-    HttpInstrumentation,
-    ExpressInstrumentation,
-    // RouterInstrumentation,
-  ],
-});
+// registerInstrumentations({
+//   tracerProvider: provider,
+//   instrumentations: [
+//     // 启用 Express 和 HTTP 两个 instrumentations
+//     HttpInstrumentation,
+//     ExpressInstrumentation,
+//     // RouterInstrumentation,
+//   ],
+// });
 
 // 初始化 Jaeger exporter，并添加到 provider 中
 // const exporter = new JaegerExporter({
@@ -46,7 +46,7 @@ const exporter = new OTLPTraceExporter({
 });
 
 // 导出 span 到 Jaeger：生产环境下推荐使用 BatchSpanProcessor
-provider.addSpanProcessor(new SimpleSpanProcessor(new ConsoleSpanExporter()));
+// provider.addSpanProcessor(new SimpleSpanProcessor(new ConsoleSpanExporter()));
 provider.addSpanProcessor(new SimpleSpanProcessor(exporter));
 
 // 启动 provider
