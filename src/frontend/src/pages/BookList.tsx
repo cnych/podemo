@@ -2,12 +2,19 @@ import { useEffect, useState } from "react";
 import { Button } from "antd";
 import { ShoppingCartOutlined } from "@ant-design/icons";
 import axios from "axios";
+import {
+  SpanStatusCode,
+  context,
+  propagation,
+  trace,
+} from "@opentelemetry/api";
 
 import Book from "../types/Book";
 import CartItem from "../types/CartItem";
 import { useCart } from "../hooks/useCart";
 import CheckoutButton from "../components/CheckoutButton";
 import "./BookList.css";
+import tracer from "../utils/otel/tracer";
 
 export const BookList: React.FC = () => {
   // const history = useNavigate();
@@ -15,13 +22,27 @@ export const BookList: React.FC = () => {
   const { cart, addBookToCart, increaseQuantity, decreaseQuantity } = useCart();
 
   useEffect(() => {
-    console.log("BookList useEffect");
-    // 调用获取书籍列表的接口
+    // 调用获取书籍列表的接口, 并将 span context 注入到 headers 中
     const fetchBooks = async () => {
-      const res = await axios.get("/api/catalog/books");
-      setBooks(res.data as Book[]);
+      const span = tracer.startSpan("fetchBooks");
+      const headers = {};
+      context.with(trace.setSpan(context.active(), span), () => {
+        propagation.inject(context.active(), headers);
+      });
+      await axios
+        .get("/api/catalog/books", { headers: headers })
+        .then((res) => {
+          setBooks(res.data as Book[]);
+          span.addEvent("fetchBooks success");
+          span.setStatus({ code: SpanStatusCode.OK });
+          span.end();
+        })
+        .catch((err) => {
+          console.log(err);
+          span.setStatus({ code: SpanStatusCode.ERROR, message: err.message });
+          span.end();
+        });
     };
-
     fetchBooks();
   }, []);
 

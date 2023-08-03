@@ -2,6 +2,17 @@ const { createProxyMiddleware } = require("http-proxy-middleware");
 
 module.exports = function (app) {
   app.use(
+    "/otel/v1/*",
+    createProxyMiddleware({
+      target: "http://otel-collector:4318",
+      changeOrigin: true,
+      pathRewrite: {
+        "^/otel/v1/": "/v1/",
+      },
+      logLevel: "debug",
+    })
+  );
+  app.use(
     "/api/catalog/*",
     createProxyMiddleware({
       target: "http://catalogservice:8082",

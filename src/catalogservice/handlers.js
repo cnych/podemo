@@ -1,5 +1,6 @@
 const mysql = require("mysql");
-const { SpanStatusCode } = require("@opentelemetry/api");
+const { SpanStatusCode, context, propagation } = require("@opentelemetry/api");
+
 const { tracer } = require("./tracer");
 
 const db = mysql.createConnection({
@@ -16,7 +17,10 @@ db.connect((err) => {
 });
 
 const getBookListHandler = (req, res) => {
-  const span = tracer.startSpan("getBookList");
+  // 从请求的 headers 中提取 trace context
+  const activeContext = propagation.extract(context.active(), req.headers);
+  // 将提取的 trace context 设置为当前的 context，并开始一个新的 span
+  const span = tracer.startSpan("getBookListHandler", {}, activeContext);
   db.query(
     "SELECT id, title, cover_url, author, price,description FROM books",
     (err, result) => {
