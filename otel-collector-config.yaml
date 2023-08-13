@@ -19,6 +19,11 @@ exporters: # 导出器，用于导出数据
     tls:
       insecure: true # 不使用 TLS
 
+  # otlphttp:
+  #   traces_endpoint: "http://192.168.0.102:5080/api/default/traces"
+  #   headers:
+  #     Authorization: "Basic cm9vdEBleGFtcGxlLmNvbTpyb290MzIx"
+
 processors: # 处理器
   batch: # 批处理配置
 

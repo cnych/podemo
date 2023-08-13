@@ -5,6 +5,7 @@ import axios from "axios";
 import {
   SpanStatusCode,
   context,
+  createTraceState,
   propagation,
   trace,
 } from "@opentelemetry/api";
@@ -25,23 +26,37 @@ export const BookList: React.FC = () => {
     // 调用获取书籍列表的接口, 并将 span context 注入到 headers 中
     const fetchBooks = async () => {
       const span = tracer.startSpan("fetchBooks");
+
+      // 获取当前 span 的 span context（包含 traceId、spanId、traceFlags、traceState）
+      const spanContext = span.spanContext();
+      spanContext.traceState = createTraceState(
+        "rojo=00f067aa0ba902b7,congo=t61rcWkgMzE"
+      );
+
       const headers = {};
+
       context.with(trace.setSpan(context.active(), span), () => {
         propagation.inject(context.active(), headers);
+        // console.log(22, propagation.getActiveBaggage());
+        console.log(1, headers);
+        axios
+          .get("/api/catalog/books", { headers: headers })
+          .then((res) => {
+            setBooks(res.data as Book[]);
+            span.addEvent("fetchBooks success");
+            span.setStatus({ code: SpanStatusCode.OK });
+            span.end();
+          })
+          .catch((err) => {
+            console.log(err);
+            span.recordException(err);
+            span.setStatus({
+              code: SpanStatusCode.ERROR,
+              message: err.message,
+            });
+            span.end();
+          });
       });
-      await axios
-        .get("/api/catalog/books", { headers: headers })
-        .then((res) => {
-          setBooks(res.data as Book[]);
-          span.addEvent("fetchBooks success");
-          span.setStatus({ code: SpanStatusCode.OK });
-          span.end();
-        })
-        .catch((err) => {
-          console.log(err);
-          span.setStatus({ code: SpanStatusCode.ERROR, message: err.message });
-          span.end();
-        });
     };
     fetchBooks();
   }, []);
