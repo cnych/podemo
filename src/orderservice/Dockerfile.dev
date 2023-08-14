@@ -1,15 +1,20 @@
-# 基于官方的 Maven 3.6.1-jdk-11-slim 这个镜像
-FROM maven:3.8.7-openjdk-18-slim AS build
+# 基于官方的 Maven 3.8.5-openjdk-17-slim 这个镜像
+FROM maven:3.8.5-openjdk-17-slim AS build
+
+WORKDIR /usr/src/app
 
 # 将本地代码复制到 Docker 容器中的 /usr/src/app 目录下
 COPY src /usr/src/app/src
 COPY pom.xml /usr/src/app
-
-# 在容器的 /usr/src/app 目录下，运行 mvn clean package 命令，构建项目
-RUN mvn -f /usr/src/app/pom.xml clean package
+COPY opentelemetry-javaagent.jar /usr/src/app
 
 # 声明服务运行在 8081 端口
 EXPOSE 8081
 
-# 指定 docker 容器的启动命令
-CMD ["mvn", "-f", "/usr/src/app/pom.xml", "spring-boot:run"]
+# 配置 MAVEN
+# ENV MAVEN_OPTS="-javaagent:/usr/src/app/opentelemetry-javaagent.jar -Dotel.javaagent.debug=true -Dotel.metrics.exporter=none -Dotel.logs.exporter=none -Dotel.service.name=order-service -Dotel.exporter.otlp.protocol=http/protobuf -Dotel.exporter.otlp.endpoint=http://otel-collector:4318/v1/traces"
+# ENV MAVEN_OPTS="-javaagent:/usr/src/app/opentelemetry-javaagent.jar -Dotel.javaagent.debug=true -Dotel.metrics.exporter=none -Dotel.logs.exporter=none -Dotel.service.name=order-service -Dotel.traces.exporter=jaeger -Dotel.exporter.jaeger.endpoint=http://jaeger:14268"
+# ENV OTEL_JAVAAGENT_CONFIGURATION_FILE=/usr/src/app/src/main/resources/otel.properties
+
+CMD ["mvn", "-Pdev", "spring-boot:run"]
+

@@ -7,7 +7,9 @@ receivers: # 接收器，用于接收数据
   otlp: # OpenTelemetry 协议接收器
     protocols: # 定义接收器支持的协议
       grpc: # 通过 gRPC 协议接收数据
+        endpoint: 0.0.0.0:4317
       http: # 通过 HTTP 协议接收数据
+        endpoint: 0.0.0.0:4318
         cors: # 跨域配置
           allowed_origins: # 允许的域名
             - http://*

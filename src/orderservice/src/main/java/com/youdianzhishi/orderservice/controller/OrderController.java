@@ -87,7 +87,6 @@ public class OrderController {
             logger.error("Fetch books info error: {}", e.getMessage());
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
-
     }
 
     @PutMapping("/{orderId}/cancel")
@@ -153,6 +152,5 @@ public class OrderController {
         order.setStatus(status);
         orderRepository.save(order);
         return new ResponseEntity<>("Ok", HttpStatus.OK);
-
     }
 }

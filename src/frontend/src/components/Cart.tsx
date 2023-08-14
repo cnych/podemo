@@ -3,9 +3,16 @@ import { useNavigate } from "react-router-dom";
 import { Table, Button, Popconfirm, message } from "antd";
 import { PayCircleOutlined, ClearOutlined } from "@ant-design/icons";
 import axios from "axios";
+import {
+  SpanStatusCode,
+  context,
+  propagation,
+  trace,
+} from "@opentelemetry/api";
 import { useAuth } from "../hooks/useAuth";
 import { useCart } from "../hooks/useCart";
 import "./Cart.css";
+import tracer from "../utils/otel/tracer";
 
 export const Cart: React.FC = () => {
   const history = useNavigate();
@@ -45,37 +52,62 @@ export const Cart: React.FC = () => {
       };
     });
 
-    axios
-      .post(
-        "/api/order/orders",
-        {
-          books: JSON.stringify(bookData),
-        },
-        {
-          headers: { Authorization: `Bearer ${user.token}` },
-        }
-      )
-      .then((res) => {
-        console.log(res);
-        if (res && res.data && res.data.id) {
-          clearCart();
-          message.success("提交成功");
-          history(`/order/${res.data.id}`);
-        } else {
-          message.error("提交失败");
-        }
-        setCheckoutLoading(false);
-      })
-      .catch((err) => {
-        console.log(err);
-        setCheckoutLoading(false);
-        if (err.response.status === 401) {
-          message.error("请先登录");
-          history("/auth");
-          return;
-        }
-        message.error("结算失败");
-      });
+    const span = tracer.startSpan("checkoutBooks");
+    // 为 span 设置属性
+    span.setAttribute("user_id", user.id);
+    // TODO：添加其他属性
+
+    const headers = { Authorization: `Bearer ${user.token}` };
+
+    context.with(trace.setSpan(context.active(), span), () => {
+      // 将 span context 注入到 headers 中
+      propagation.inject(context.active(), headers);
+
+      axios
+        .post(
+          "/api/order/orders",
+          {
+            books: JSON.stringify(bookData),
+          },
+          {
+            headers: headers,
+          }
+        )
+        .then((res) => {
+          console.log(res);
+          if (res && res.data && res.data.id) {
+            clearCart();
+            message.success("提交成功");
+            // 结束 span
+            span.setStatus({ code: SpanStatusCode.OK });
+            span.end();
+            history(`/order/${res.data.id}`);
+          } else {
+            message.error("提交失败");
+            // 结束 span
+            span.setStatus({ code: SpanStatusCode.ERROR });
+            span.end();
+          }
+          setCheckoutLoading(false);
+        })
+        .catch((err) => {
+          console.log(err);
+          // 在span中记录异常
+          span.recordException(err);
+          span.setStatus({
+            code: SpanStatusCode.ERROR,
+            message: err.message,
+          });
+          span.end();
+          setCheckoutLoading(false);
+          if (err.response.status === 401) {
+            message.error("请先登录");
+            history("/auth");
+            return;
+          }
+          message.error("结算失败");
+        });
+    });
   };
 
   const columns = [
