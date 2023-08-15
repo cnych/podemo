@@ -80,6 +80,11 @@ func LoginHandler(c *gin.Context) {
 }
 
 func UserInfoHandler(c *gin.Context) {
+	for name, values := range c.Request.Header {
+		for _, value := range values {
+			fmt.Printf("%s: %s\n", name, value)
+		}
+	}
 	authHeader := c.GetHeader("Authorization")
 	if authHeader == "" {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "No authorization header"})

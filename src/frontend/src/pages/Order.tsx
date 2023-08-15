@@ -4,11 +4,18 @@ import { Tabs, message, Empty, Button } from "antd";
 import { Link, useNavigate } from "react-router-dom";
 import StickyBox from "react-sticky-box";
 import axios from "axios";
+import {
+  SpanStatusCode,
+  context,
+  propagation,
+  trace,
+} from "@opentelemetry/api";
 import OrderAction from "../components/OrderAction";
 import OrderTable from "../components/OrderTable";
 import { useAuth } from "../hooks/useAuth";
 import { OrderStatus } from "../types/Enum";
 import "./Order.css";
+import tracer from "../utils/otel/tracer";
 
 export const Order: React.FC = () => {
   const history = useNavigate();
@@ -22,23 +29,43 @@ export const Order: React.FC = () => {
       if (isLoading) return;
       console.log("user：", user);
       if (user && user.token) {
-        try {
-          const res = await axios.get(`/api/order/orders`, {
-            headers: {
-              Authorization: `Bearer ${user.token}`,
-              "Content-Type": "application/json",
-            },
-          });
-          setOrderList(res.data);
-        } catch (err: any) {
-          if (err.response && err.response.status === 401) {
-            message.error("请先登录");
-            history("/auth");
-            return;
-          }
-          console.log(err);
-          message.error("获取订单列表失败");
-        }
+        // 创建 span
+        const span = tracer.startSpan("fetchOrderList");
+        // 为 span 设置属性
+        span.setAttribute("user_id", user.id);
+        // TODO：添加其他属性
+        const headers = { Authorization: `Bearer ${user.token}` };
+        // 注入 span context
+        context.with(trace.setSpan(context.active(), span), () => {
+          // 将 span context 注入到 headers 中
+          propagation.inject(context.active(), headers);
+
+          axios
+            .get(`/api/order/orders`, {
+              headers: headers,
+            })
+            .then((res) => {
+              setOrderList(res.data);
+              // 结束 span
+              span.setStatus({ code: SpanStatusCode.OK });
+              span.end();
+            })
+            .catch((err) => {
+              span.recordException(err);
+              span.setStatus({
+                code: SpanStatusCode.ERROR,
+                message: err.message,
+              });
+              span.end();
+              if (err.response && err.response.status === 401) {
+                message.error("请先登录");
+                history("/auth");
+                return;
+              }
+              console.log(err);
+              message.error("获取订单列表失败");
+            });
+        });
       } else {
         message.error("请先登录");
         history("/auth");

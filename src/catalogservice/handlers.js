@@ -66,16 +66,33 @@ const getBookDetailHandler = (req, res) => {
 };
 
 const getBookBatchHandler = (req, res) => {
+  // 从请求的 headers 中提取 trace context
+  const activeContext = propagation.extract(context.active(), req.headers);
+  // 将提取的 trace context 设置为当前的 context，并开始一个新的 span
+  const span = tracer.startSpan("getBookBatchHandler", {}, activeContext);
   const { ids } = req.query;
   const idsArray = ids.split(",").map((id) => parseInt(id));
+  // 记录请求中的 ids
+  span.setAttribute("ids", ids);
   db.query(
     "SELECT id, title, cover_url, author, price, description FROM books WHERE id IN (?)",
     [idsArray],
     (err, result) => {
       if (err) {
+        span.setStatus({
+          code: SpanStatusCode.ERROR,
+          message: err.message,
+        });
+        span.end();
         res.status(500).json({ error: err.message });
         return;
       }
+      span.addEvent("Got book batch");
+      span.setStatus({
+        code: SpanStatusCode.OK,
+        message: "Success",
+      });
+      span.end();
       res.json(result);
     }
   );
