@@ -14,68 +14,60 @@ import (
 	"go.opentelemetry.io/otel/exporters/otlp/otlptrace"
 	"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc"
 	"go.opentelemetry.io/otel/propagation"
-	"google.golang.org/grpc/credentials"
-
 	"go.opentelemetry.io/otel/sdk/resource"
 	sdktrace "go.opentelemetry.io/otel/sdk/trace"
+	"google.golang.org/grpc/credentials"
 )
 
 var (
 	serviceName  = getEnv("SERVICE_NAME", "user-service")
-	collectorURL = getEnv("OTEL_EXPORTER_OTLP_ENDPOINT", "otel-collector:4317") // Assuming localhost as default
+	collectorURL = getEnv("OTEL_COLLECTOR_OTLP_ENDPOINT", "otel-collector:4317")
 	insecure     = getEnv("INSECURE", "true")
+	timeout      = 5 * time.Second
 )
 
-func getEnv(key, fallback string) string {
-	if value, exists := os.LookupEnv(key); exists {
+func getEnv(key, defaultVal string) string {
+	if value, ok := os.LookupEnv(key); ok {
 		return value
 	}
-	return fallback
+	return defaultVal
 }
 
 func initTracer() (func(context.Context) error, error) {
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), timeout)
 	defer cancel()
 
-	// 定义 grpc 连接是否采用安全模式
-	secureOption := otlptracegrpc.WithTLSCredentials(credentials.NewClientTLSFromCert(nil, ""))
-	if insecure == "true" || insecure == "1" {
+	// 定义 grpc 的连接是否采用安全模式
+	var secureOption otlptracegrpc.Option
+	if insecure == "true" || insecure == "1" { // 非安全模式
 		secureOption = otlptracegrpc.WithInsecure()
+	} else {
+		secureOption = otlptracegrpc.WithTLSCredentials(credentials.NewClientTLSFromCert(nil, ""))
 	}
-	// 创建 otlp exporter
-	exporter, err := otlptrace.New(
-		ctx,
-		otlptracegrpc.NewClient(
-			secureOption,
-			otlptracegrpc.WithEndpoint(collectorURL), // 如果不配置，默认使用 localhost:4317
-		),
-	)
-	if err != nil {
-		return nil, err
-	}
-	// 设置 resource
-	resources, err := resource.New(
-		ctx,
-		resource.WithAttributes(
-			attribute.String("service.name", serviceName),
-			attribute.String("library.language", "go"),
-		),
-	)
+
+	// 创建 OTLP Trace Exporter
+	exporter, err := otlptrace.New(ctx, otlptracegrpc.NewClient(secureOption, otlptracegrpc.WithEndpoint(collectorURL)))
 	if err != nil {
 		return nil, err
 	}
 
-	// 设置 TracerProvider
-	otel.SetTracerProvider(
-		sdktrace.NewTracerProvider(
-			sdktrace.WithSampler(sdktrace.AlwaysSample()),
-			sdktrace.WithBatcher(exporter),
-			sdktrace.WithResource(resources),
-		),
-	)
+	// 设置 resource
+	resource, err := resource.New(ctx, resource.WithAttributes(
+		attribute.String("service.name", serviceName),
+		attribute.String("service.namespace", "default"),
+	))
+	if err != nil {
+		return nil, err
+	}
+
+	// 设置 TraceProvider
+	otel.SetTracerProvider(sdktrace.NewTracerProvider(
+		sdktrace.WithSampler(sdktrace.AlwaysSample()),
+		sdktrace.WithBatcher(exporter),
+		sdktrace.WithResource(resource),
+	))
 	// 设置传播上下文的处理器
 	otel.SetTextMapPropagator(propagation.NewCompositeTextMapPropagator(propagation.TraceContext{}, propagation.Baggage{}))
-
 	return exporter.Shutdown, nil
 }
 
@@ -96,26 +88,24 @@ func CORSMiddleware() gin.HandlerFunc {
 }
 
 func main() {
-	// 初始化 tracer
+	// 初始化Tracer
 	cleanup, err := initTracer()
 	if err != nil {
-		log.Printf("Failed to initialize tracer: %v", err)
+		log.Printf("Failed to init otel tracer: %v", err)
 		return
 	}
 
 	defer func() {
-		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		ctx, cancel := context.WithTimeout(context.Background(), timeout)
 		defer cancel()
-		// 清理 OTLP exporter
 		if err := cleanup(ctx); err != nil {
-			log.Printf("Failed to shut down OTLP exporter: %v", err)
+			log.Printf("Failed to cleanup otel tracer: %v", err)
 		}
 	}()
 
 	router := gin.Default()
 
 	router.Use(CORSMiddleware())
-	// 使用 otelgin 中间件
 	router.Use(otelgin.Middleware(serviceName))
 
 	router.GET("/ping", handler.PingHandler)

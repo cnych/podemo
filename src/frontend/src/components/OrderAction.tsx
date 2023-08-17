@@ -3,10 +3,17 @@ import { useNavigate } from "react-router-dom";
 import { Popconfirm, Tag, Button, message } from "antd";
 import { PayCircleOutlined } from "@ant-design/icons";
 import axios from "axios";
+import {
+  SpanStatusCode,
+  context,
+  propagation,
+  trace,
+} from "@opentelemetry/api";
 import { useAuth } from "../hooks/useAuth";
 import Order from "../types/Order";
 import { OrderStatus } from "../types/Enum";
 import "./OrderAction.css";
+import tracer from "../utils/otel/tracer";
 
 const OrderAction: React.FC<{ order: Order; triggerRefresh?: () => void }> = ({
   order,
@@ -72,29 +79,57 @@ const OrderAction: React.FC<{ order: Order; triggerRefresh?: () => void }> = ({
     if (isLoading) return;
     if (user && user.token) {
       setPayLoading(true);
-      try {
-        await axios.post(
-          `/api/pay/payments`,
-          {
-            order_id: order?.id,
-            amount: order?.amount,
-            user_id: user.id,
-          },
-          {
-            headers: {
-              Authorization: `Bearer ${user.token}`,
-              "Content-Type": "application/json",
+
+      const span = tracer.startSpan("payOrder");
+      // 为 span 设置属性
+      span.setAttribute("user_id", user.id);
+      // TODO：添加其他属性
+
+      const headers = {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${user.token}`,
+      };
+
+      context.with(trace.setSpan(context.active(), span), () => {
+        // 将 span context 注入到 headers 中
+        propagation.inject(context.active(), headers);
+
+        // 支付逻辑
+        axios
+          .post(
+            `/api/pay/payments`,
+            {
+              order_id: order?.id,
+              amount: order?.amount,
+              user_id: user.id,
             },
-          }
-        );
-        message.success("支付成功");
-        triggerRefresh && triggerRefresh();
-        history("/order");
-      } catch (err: any) {
-        console.log(err);
-        message.error("支付失败");
-      }
-      setPayLoading(false);
+            {
+              headers: headers,
+            }
+          )
+          .then((res) => {
+            console.log(res);
+            // 结束 span
+            span.setStatus({ code: SpanStatusCode.OK });
+            message.success("支付成功");
+            triggerRefresh && triggerRefresh();
+            history("/order");
+          })
+          .catch((err) => {
+            console.log(err);
+            message.error("支付失败");
+            span.recordException(err);
+            span.setStatus({
+              code: SpanStatusCode.ERROR,
+              message: err.message,
+            });
+          })
+          .finally(() => {
+            setPayLoading(false);
+            // 结束 span
+            span.end();
+          });
+      });
     } else {
       message.error("请先登录");
       history("/auth");
