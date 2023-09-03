@@ -45,7 +45,6 @@ export const BookList: React.FC = () => {
             setBooks(res.data as Book[]);
             span.addEvent("fetchBooks success");
             span.setStatus({ code: SpanStatusCode.OK });
-            span.end();
           })
           .catch((err) => {
             console.log(err);
@@ -54,6 +53,8 @@ export const BookList: React.FC = () => {
               code: SpanStatusCode.ERROR,
               message: err.message,
             });
+          })
+          .finally(() => {
             span.end();
           });
       });
