@@ -16,5 +16,6 @@ EXPOSE 8081
 # ENV MAVEN_OPTS="-javaagent:/usr/src/app/opentelemetry-javaagent.jar -Dotel.javaagent.debug=true -Dotel.metrics.exporter=none -Dotel.logs.exporter=none -Dotel.service.name=order-service -Dotel.traces.exporter=jaeger -Dotel.exporter.jaeger.endpoint=http://jaeger:14268"
 # ENV OTEL_JAVAAGENT_CONFIGURATION_FILE=/usr/src/app/src/main/resources/otel.properties
 
-CMD ["mvn", "-Pdev", "spring-boot:run"]
+# CMD ["mvn", "-Pdev", "spring-boot:run"]
+CMD ["mvn", "spring-boot:run"]
 

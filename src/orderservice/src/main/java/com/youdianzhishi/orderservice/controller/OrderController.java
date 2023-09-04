@@ -6,6 +6,7 @@ import com.youdianzhishi.orderservice.model.OrderDto;
 import com.youdianzhishi.orderservice.model.User;
 import com.youdianzhishi.orderservice.repository.OrderRepository;
 import jakarta.servlet.http.HttpServletRequest;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -20,6 +21,13 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+import io.opentelemetry.api.OpenTelemetry;
+import io.opentelemetry.api.trace.Span;
+import io.opentelemetry.api.trace.StatusCode;
+import io.opentelemetry.api.trace.Tracer;
+import io.opentelemetry.context.Context;
+import io.opentelemetry.context.Scope;
+
 @RestController
 @RequestMapping("/api/orders")
 public class OrderController {
@@ -31,21 +39,47 @@ public class OrderController {
     @Autowired
     private WebClient webClient;
 
+    @Autowired
+    private Tracer tracer;
+
     @GetMapping
     public ResponseEntity<List<OrderDto>> getAllOrders(HttpServletRequest request) {
-        User user = (User) request.getAttribute("user");
-        // 要根据 orderDate 倒序排列
-        List<Order> orders = orderRepository.findByUserIdOrderByOrderDateDesc(user.getId());
-        // 将Order转换为OrderDto
-        List<OrderDto> orderDtos = orders.stream().map(order -> {
-            try {
-                return order.toOrderDto(webClient);
-            } catch (Exception e) {
-                throw new RuntimeException(e);
-            }
-        }).collect(Collectors.toList());
+        // 从请求属性中获取 Span
+        Span span = (Span) request.getAttribute("currentSpan");
+        Context context = Context.current().with(span);
 
-        return new ResponseEntity<>(orderDtos, HttpStatus.OK);
+        try {
+            // 从拦截器中获取用户信息
+            User user = (User) request.getAttribute("user");
+            span.setAttribute("user_id", user.getId()); 
+
+            // 新建一个 DB 查询的 span
+            Span dbSpan = tracer.spanBuilder("DB findByUserIdOrderByOrderDateDesc").setParent(context).startSpan();
+            // 要根据 orderDate 倒序排列
+            List<Order> orders = orderRepository.findByUserIdOrderByOrderDateDesc(user.getId());
+            dbSpan.addEvent("OrderRepository findByUserIdOrderByOrderDateDesc From DB");
+            dbSpan.setAttribute("order_count", orders.size());
+            dbSpan.end();
+
+            // 将Order转换为OrderDto
+            List<OrderDto> orderDtos = orders.stream().map(order -> {
+                try {
+                    return order.toOrderDto(webClient, tracer, context); 
+                } catch (Exception e) {
+                    throw new RuntimeException(e);
+                }
+            }).collect(Collectors.toList());
+
+            return new ResponseEntity<>(orderDtos, HttpStatus.OK);
+        } catch (Exception e) {
+            // 记录 Span 错误
+            span.recordException(e).setStatus(StatusCode.ERROR, e.getMessage());
+            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+        } finally {
+            // 记录 Span 结束时间
+            span.end();
+        }
+
     }
 
     @PostMapping
@@ -136,7 +170,8 @@ public class OrderController {
     }
 
     @PostMapping("/{orderId}/status/{status}")
-    public ResponseEntity updateStatus(@PathVariable Long orderId, @PathVariable int status, HttpServletRequest request) {
+    public ResponseEntity updateStatus(@PathVariable Long orderId, @PathVariable int status,
+            HttpServletRequest request) {
         // 从拦截器中获取用户信息
         User user = (User) request.getAttribute("user");
 
