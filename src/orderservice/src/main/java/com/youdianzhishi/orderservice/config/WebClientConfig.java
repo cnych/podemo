@@ -2,9 +2,9 @@ package com.youdianzhishi.orderservice.config;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
-import org.springframework.http.HttpHeaders;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.annotation.Order;
+import org.springframework.http.HttpHeaders;
 import org.springframework.web.reactive.function.client.ClientRequest;
 import org.springframework.web.reactive.function.client.ExchangeFilterFunction;
 import org.springframework.web.reactive.function.client.WebClient;
@@ -22,17 +22,19 @@ public class WebClientConfig {
 
     @Bean
     public WebClient webClient() {
-        return WebClient.builder().filter(traceExchangeFilterFunction()).build();
+        return WebClient.builder()
+                .filter(traceExchangeFilterFunction())
+                .build();
     }
 
     @Bean
     public ExchangeFilterFunction traceExchangeFilterFunction() {
         return (clientRequest, next) -> {
-            // 获取当前上下文的 Span
+            // 获取当前的上下文 Span
             Span currentSpan = Span.current();
-            Context context = Context.current().with(currentSpan);
+            Context currentContext = Context.current().with(currentSpan);
 
-            // 创建新的请求头并添加跟踪信息
+            // 创建新的请求Header并添加trace信息
             HttpHeaders newHeaders = new HttpHeaders();
             newHeaders.putAll(clientRequest.headers());
 
@@ -43,10 +45,10 @@ public class WebClientConfig {
                 }
             };
 
-            // 将当前上下文的 Span 注入到请求头中
-            openTelemetry.getPropagators().getTextMapPropagator().inject(context, newHeaders, setter);
+            // 将当前上下文的 Span 注入到请求头中去（tracecontext）
+            openTelemetry.getPropagators().getTextMapPropagator().inject(currentContext, newHeaders, setter);
 
-            // 创建一个新的 ClientRequest 对象
+            // 创建新的请求，添加新的请求头
             ClientRequest newRequest = ClientRequest.from(clientRequest)
                     .headers(headers -> headers.addAll(newHeaders))
                     .build();

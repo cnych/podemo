@@ -33,13 +33,11 @@ public class TokenInterceptor implements HandlerInterceptor {
         Span currentSpan = (Span) request.getAttribute("currentSpan");
         Context context = Context.current().with(currentSpan);
 
-        // 创建新的 Span，作为子 Span
-        Span span = tracer.spanBuilder("GET /api/userinfo")
-            .setParent(context).startSpan();
+        // 创建一个新的Span，获取用户信息的Span
+        Span span = tracer.spanBuilder("GET /api/userinfo").setParent(context).startSpan();
 
-        // 将子 Span 设置为当前上下文，相当于切换上下文到子 Span
+        // 将子 span 设置为当前上下文，相当于切换上下文到子 Span
         try (Scope scope = span.makeCurrent()) {
-
             try {
                 String token = request.getHeader("Authorization");
                 if (token == null) {
@@ -84,7 +82,6 @@ public class TokenInterceptor implements HandlerInterceptor {
                 response.setStatus(HttpStatus.INTERNAL_SERVER_ERROR.value());
                 return false;
             } finally {
-                request.setAttribute("parentSpan", span);
                 span.end();
             }
         }

@@ -9,16 +9,9 @@ COPY . .
 
 # 安装依赖
 RUN pip install -r requirements.txt -i http://mirrors.aliyun.com/pypi/simple/ --trusted-host mirrors.aliyun.com
-RUN pip install opentelemetry-distro opentelemetry-exporter-otlp -i http://mirrors.aliyun.com/pypi/simple/ --trusted-host mirrors.aliyun.com 
-RUN opentelemetry-bootstrap -a install
 
 # 暴露你的服务所需的端口，这里使用的是 8083
 EXPOSE 8083
 
-# 设置启动命令为你的应用的启动命令
-ENV OTEL_SERVICE_NAME=payment-service
-ENV OTEL_TRACES_EXPORTER=console,otlp 
-ENV OTEL_METRICS_EXPORTER=none
-ENV OTEL_EXPORTER_OTLP_TRACES_ENDPOINT=http://otel-collector:4317
-ENV OTEL_PYTHON_DISABLED_INSTRUMENTATIONS=sqlalchemy
-CMD [ "opentelemetry-instrument", "python", "app.py"]
+
+CMD ["python", "app.py"]

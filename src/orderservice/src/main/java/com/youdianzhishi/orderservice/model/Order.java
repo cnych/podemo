@@ -14,7 +14,7 @@ import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
 
 import java.io.IOException;
-import java.text.SimpleDateFormat; 
+import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -118,11 +118,10 @@ public class Order {
     }
 
     public OrderDto toOrderDto(WebClient webClient, Tracer tracer, Context context) throws Exception {
-        // 创建新的 Span，作为子 Span
-        Span span = tracer.spanBuilder("GET /api/books/batch").setParent(context).startSpan();
-
-        try (Scope scope = span.makeCurrent()) { // 切换上下文到子 Span
-
+        // 创建新的 span，作为子 span
+        Span span = tracer.spanBuilder("ConvertOrder2Dto").setParent(context).startSpan();
+        // 切换上下文到我们的子span
+        try (Scope scope = span.makeCurrent()) {
             span.setAttribute("order_id", this.getId());
             span.setAttribute("status", this.getStatus());
 
@@ -136,6 +135,7 @@ public class Order {
             List<Integer> bookIds = this.getBookIds(); // 假设你有一个可以获取书籍ID的方法
             // 将 bookIds 转换为字符串，以便于传递给 WebClient
             String bookIdsStr = bookIds.stream().map(String::valueOf).collect(Collectors.joining(","));
+
             span.addEvent("get book ids");
             span.setAttribute("book_ids", bookIdsStr);
 
@@ -169,10 +169,10 @@ public class Order {
             orderDto.setTotal(totalCount);
 
             span.addEvent("calculate total amount and total count");
-
             span.end();
 
             return orderDto;
         }
+
     }
 }
