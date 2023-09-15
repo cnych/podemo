@@ -160,7 +160,7 @@ public class OrderController {
     }
 
     @PutMapping("/{orderId}/cancel")
-    public ResponseEntity cancelOrder(@PathVariable Long orderId, HttpServletRequest request) {
+    public ResponseEntity<String> cancelOrder(@PathVariable Long orderId, HttpServletRequest request) {
         // 从拦截器中获取用户信息
         User user = (User) request.getAttribute("user");
 
@@ -184,7 +184,7 @@ public class OrderController {
     }
 
     @DeleteMapping("/{orderId}")
-    public ResponseEntity deleteOrder(@PathVariable Long orderId, HttpServletRequest request) {
+    public ResponseEntity<String> deleteOrder(@PathVariable Long orderId, HttpServletRequest request) {
         // 从拦截器中获取用户信息
         User user = (User) request.getAttribute("user");
 
@@ -206,22 +206,44 @@ public class OrderController {
     }
 
     @PostMapping("/{orderId}/status/{status}")
-    public ResponseEntity updateStatus(@PathVariable Long orderId, @PathVariable int status,
+    public ResponseEntity<String> updateStatus(@PathVariable Long orderId, @PathVariable int status,
             HttpServletRequest request) {
-        // 从拦截器中获取用户信息
-        User user = (User) request.getAttribute("user");
+        
+        // 从请求属性里面获取 Span
+        Span span = (Span) request.getAttribute("currentSpan");
+        Context context = Context.current().with(span);
 
-        Order order = orderRepository.findById(orderId).orElse(null);
-        if (order == null) {
-            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+        try {
+            // 从拦截器中获取用户信息
+            User user = (User) request.getAttribute("user");
+            span.setAttribute("user_id", user.getId());
+
+            // 新建一个 DB 查询的 span
+            Span dbSpan = tracer.spanBuilder("DB findById").setParent(context).startSpan();
+            Order order = orderRepository.findById(orderId).orElse(null);
+            if (order == null) {
+                dbSpan.addEvent("order not found").setStatus(StatusCode.ERROR);
+                dbSpan.end();
+                return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+            }
+            if (order.getUserId() != user.getId()) {
+                dbSpan.addEvent("order user is not current user").setStatus(StatusCode.ERROR);
+                dbSpan.end();
+                return new ResponseEntity<>("该订单不属于当前用户", HttpStatus.FORBIDDEN);
+            }
+            dbSpan.end();
+            order.setStatus(status);
+            
+            orderRepository.save(order);
+            span.setAttribute("order_id", order.getId()).addEvent("order status update complete").setStatus(StatusCode.OK);
+
+            return new ResponseEntity<>("Ok", HttpStatus.OK);
+        } catch (Exception e) {
+            logger.error("Update order status error: {}", e.getMessage());
+            span.recordException(e).setStatus(StatusCode.ERROR, e.getMessage());
+            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+        } finally {
+            span.end();
         }
-
-        if (order.getUserId() != user.getId()) {
-            return new ResponseEntity<>("该订单不属于当前用户", HttpStatus.FORBIDDEN);
-        }
-
-        order.setStatus(status);
-        orderRepository.save(order);
-        return new ResponseEntity<>("Ok", HttpStatus.OK);
     }
 }

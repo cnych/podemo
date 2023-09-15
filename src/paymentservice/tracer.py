@@ -1,14 +1,18 @@
 import os
+
 from opentelemetry import trace
-from opentelemetry.exporter.otlp.proto.grpc.trace_exporter import OTLPSpanExporter
-from opentelemetry.sdk.resources import Resource
 from opentelemetry.sdk.trace import TracerProvider
+from opentelemetry.sdk.resources import Resource
 from opentelemetry.sdk.trace.export import BatchSpanProcessor
 from opentelemetry.semconv.resource import ResourceAttributes
+from opentelemetry.exporter.otlp.proto.grpc.trace_exporter import OTLPSpanExporter
+from opentelemetry.trace.propagation.tracecontext import TraceContextTextMapPropagator
 
-# 从环境变量中获取 OTLP Exporter 的地址
-OTLP_EXPORTER_ENDPOINT = os.getenv("OTLP_EXPORTER_ENDPOINT", "otel-collector:4317")
+
+OTLP_ENDPOINT = os.getenv("OTLP_EXPORTER_ENDPOINT", "otel-collector:4317")
+# 从环境变量中获取服务名
 SERVICE_NAME = os.getenv("SERVICE_NAME", "payment-service")
+
 
 resource = Resource(attributes={
     ResourceAttributes.SERVICE_NAME: SERVICE_NAME,
@@ -17,13 +21,14 @@ resource = Resource(attributes={
 })
 provider = TracerProvider(resource=resource)
 
+
 # 配置 OTLP Span Exporter
-otlp_exporter = OTLPSpanExporter(endpoint=OTLP_EXPORTER_ENDPOINT, insecure=True)
+otlp_exporter = OTLPSpanExporter(endpoint=OTLP_ENDPOINT, insecure=True)
 processor = BatchSpanProcessor(otlp_exporter)
 provider.add_span_processor(processor)
 
-# 设置全局默认的 tracer provider
+# 配置全局 TracerProvider
 trace.set_tracer_provider(provider)
 
-# 从全局 tracer provider 创建一个 tracer
+# 从全局 TracerProvider 获取 Tracer 对象
 tracer = trace.get_tracer(__name__)
