@@ -6,10 +6,9 @@ from flask import Flask, request, jsonify, g, abort
 from flask_cors import CORS
 from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
-from tracer import tracer
-from opentelemetry import trace
-from opentelemetry.semconv.trace import SpanAttributes
-from opentelemetry.trace.propagation.tracecontext import TraceContextTextMapPropagator
+from tracer import *
+from opentelemetry.instrumentation.flask import FlaskInstrumentor
+from opentelemetry.instrumentation.requests import RequestsInstrumentor
 
 
 app = Flask(__name__)
@@ -20,32 +19,8 @@ CORS(app)
 db = SQLAlchemy(app)
 migrate = Migrate(app, db)
 
-# 创建一个 propagator 实例
-propagator = TraceContextTextMapPropagator()
-
-
-@app.before_request
-def start_span():
-    # 从请求头中去获取 Trace Context
-    parent_context = propagator.extract(request.headers)
-    # 创建一个 Span
-    span = tracer.start_span(f"{request.method} {request.path}", context=parent_context)
-    # 设置 Span 的属性
-    span.set_attribute(SpanAttributes.HTTP_METHOD, request.method)
-    span.set_attribute(SpanAttributes.HTTP_URL, request.path)
-    # 把 span 存储在 g 对象中，方便后续处理使用
-    g.span = span
-
-
-@app.after_request
-def end_span(response):
-    span = g.get("span")
-    if span:
-        # 设置 Span 的属性
-        span.set_attribute(SpanAttributes.HTTP_STATUS_CODE, response.status_code)
-        # 结束 Span
-        span.end()
-    return response
+FlaskInstrumentor().instrument_app(app)
+RequestsInstrumentor().instrument()
 
 
 def jwt_middleware():
@@ -56,12 +31,6 @@ def jwt_middleware():
             abort(401, "Token is missing")
 
         headers = {"Authorization": token}
-
-        # 设置当前的 span
-        with trace.use_span(g.span):
-            # 注入 Trace Context（当前上下文中的span）
-            propagator.inject(headers)
-
         # 请求用户服务获取用户信息
         response = requests.get(
             os.getenv("USER_SERVICE_URL") + "/api/userinfo",
@@ -92,9 +61,6 @@ class Payment(db.Model):
 
 @app.route("/api/payments", methods=["POST"])
 def create_payment():
-    # 从 g 对象中获取 Span
-    span = g.span
-
     # 实际场景更多会从消息队列中去获取订单信息
     # 这里为了方便，直接从请求中获取
     order_id = request.json.get("order_id")
@@ -105,9 +71,6 @@ def create_payment():
 
     amount = request.json.get("amount")
 
-    span.set_attribute("order_id", order_id)
-    span.set_attribute("user_id", user_id)
-
     # 模拟支付过程，随机 Sleep 0.5-2 秒
     time.sleep(random.randint(5, 20) / 10)
 
@@ -115,26 +78,15 @@ def create_payment():
     db.session.add(payment)
     db.session.commit()
 
-    # 记录事件
-    span.add_event(
-        "payment_created",
-        {"order_id": order_id, "user_id": user_id, "amount": amount},
-    )
-
     # TODO：应该发送消息到消息队列，通知订单服务更新订单状态
-    with trace.use_span(span):
-        headers = {"Authorization": token}
-        propagator.inject(headers)
-        # 这里为了方便，直接调用订单服务的 API 来处理
-        requests.post(
-            "{}/api/orders/{}/status/{}".format(
-                os.getenv("ORDER_SERVICE_URL"), order_id, 2
-            ),
-            headers=headers,
-        )
-
-    # TODO：记录日志
-    span.add_event("payment_updated", {"order_id": order_id, "status": 2})
+    headers = {"Authorization": token}
+    # 这里为了方便，直接调用订单服务的 API 来处理
+    requests.post(
+        "{}/api/orders/{}/status/{}".format(
+            os.getenv("ORDER_SERVICE_URL"), order_id, 2
+        ),
+        headers=headers,
+    )
 
     return jsonify({"id": payment.id}), 201
 
