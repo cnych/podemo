@@ -21,6 +21,12 @@ exporters: # 导出器，用于导出数据
     tls:
       insecure: true # 不使用 TLS
 
+  prometheus:
+    endpoint: "0.0.0.0:8889" # 这个地址不是Prometheus的地址，而是otel-collector的地址
+
+  logging:
+    loglevel: debug
+
   # otlphttp:
   #   traces_endpoint: "http://192.168.0.102:5080/api/default/traces"
   #   headers:
@@ -31,9 +37,15 @@ processors: # 处理器
 
 service: # 服务配置
   telemetry: # 采集器自身的一些遥测配置
+    metrics:
+      address: "0.0.0.0:8888" # otel-collector 采集器自身的指标地址
     logs:
       level: "debug" # 日志级别
   pipelines: # 管道配置
+    metrics: # 指标管道
+      receivers: [otlp] # 接收器
+      processors: [] # 处理器
+      exporters: [logging, prometheus] # 导出器
     traces: # 链路追踪配置
       receivers: [otlp, jaeger] # 接收器
       exporters: [jaeger] # 导出器

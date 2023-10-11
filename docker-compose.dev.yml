@@ -98,6 +98,21 @@ services:
       - orderservice
       - otel-collector
 
+  prometheus:
+    image: quay.io/prometheus/prometheus:v2.47.1
+    command: --config.file=/etc/prometheus/prometheus.yml --no-scrape.adjust-timestamps
+    volumes:
+      - ./prometheus.yaml:/etc/prometheus/prometheus.yml
+    ports:
+      - "9090:9090"
+
+  grafana:
+    image: grafana/grafana:10.0.8
+    volumes:
+      - grafana_data:/var/lib/grafana
+    ports:
+      - "3001:3000"
+
   frontend:
     build:
       context: ./src/frontend
@@ -115,3 +130,4 @@ services:
 
 volumes:
   mysql_data:
+  grafana_data:
