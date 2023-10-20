@@ -11,11 +11,14 @@ import (
 	"go.opentelemetry.io/contrib/instrumentation/github.com/gin-gonic/gin/otelgin"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/exporters/otlp/otlpmetric/otlpmetricgrpc"
 	"go.opentelemetry.io/otel/exporters/otlp/otlptrace"
 	"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc"
 	"go.opentelemetry.io/otel/propagation"
+	sdkmetric "go.opentelemetry.io/otel/sdk/metric"
 	"go.opentelemetry.io/otel/sdk/resource"
 	sdktrace "go.opentelemetry.io/otel/sdk/trace"
+	semconv "go.opentelemetry.io/otel/semconv/v1.21.0"
 	"google.golang.org/grpc/credentials"
 )
 
@@ -33,7 +36,8 @@ func getEnv(key, defaultVal string) string {
 	return defaultVal
 }
 
-func initTracer() (func(context.Context) error, error) {
+// 初始化 TracerProvider
+func initTracerProvider() (*sdktrace.TracerProvider, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), timeout)
 	defer cancel()
 
@@ -61,14 +65,47 @@ func initTracer() (func(context.Context) error, error) {
 	}
 
 	// 设置 TraceProvider
-	otel.SetTracerProvider(sdktrace.NewTracerProvider(
+	tp := sdktrace.NewTracerProvider(
 		sdktrace.WithSampler(sdktrace.AlwaysSample()),
 		sdktrace.WithBatcher(exporter),
 		sdktrace.WithResource(resource),
-	))
+	)
+	otel.SetTracerProvider(tp)
 	// 设置传播上下文的处理器
 	otel.SetTextMapPropagator(propagation.NewCompositeTextMapPropagator(propagation.TraceContext{}, propagation.Baggage{}))
-	return exporter.Shutdown, nil
+	return tp, nil
+}
+
+// 初始化 MeterProvider
+func initMeterProvider() (*sdkmetric.MeterProvider, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), timeout)
+	defer cancel()
+
+	// 定义 grpc 的连接是否采用安全模式
+	var secureOption otlpmetricgrpc.Option
+	if insecure == "true" || insecure == "1" { // 非安全模式
+		secureOption = otlpmetricgrpc.WithInsecure()
+	} else {
+		secureOption = otlpmetricgrpc.WithTLSCredentials(credentials.NewClientTLSFromCert(nil, ""))
+	}
+
+	// 创建 OTLP Metric Exporter
+	exporter, err := otlpmetricgrpc.New(ctx, secureOption, otlpmetricgrpc.WithEndpoint(collectorURL))
+	if err != nil {
+		return nil, err
+	}
+
+	// 设置 resource
+	resource := resource.NewWithAttributes(semconv.SchemaURL, semconv.ServiceNameKey.String(serviceName))
+
+	// 设置 MeterProvider
+	mp := sdkmetric.NewMeterProvider(
+		sdkmetric.WithReader(sdkmetric.NewPeriodicReader(exporter, sdkmetric.WithInterval(10*time.Second))),
+		sdkmetric.WithResource(resource),
+	)
+	// 设置全局 MeterProvider
+	otel.SetMeterProvider(mp)
+	return mp, nil
 }
 
 func CORSMiddleware() gin.HandlerFunc {
@@ -88,20 +125,25 @@ func CORSMiddleware() gin.HandlerFunc {
 }
 
 func main() {
-	// 初始化Tracer
-	cleanup, err := initTracer()
-	if err != nil {
-		log.Printf("Failed to init otel tracer: %v", err)
-		return
-	}
+	ctx := context.Background()
 
-	defer func() {
-		ctx, cancel := context.WithTimeout(context.Background(), timeout)
-		defer cancel()
-		if err := cleanup(ctx); err != nil {
-			log.Printf("Failed to cleanup otel tracer: %v", err)
+	{
+		// 初始化TracerProvider
+		tp, err := initTracerProvider()
+		if err != nil {
+			log.Printf("Failed to init otel tracer: %v", err)
+			return
 		}
-	}()
+		defer tp.Shutdown(ctx)
+
+		// 初始化 MeterProvider
+		mp, err := initMeterProvider()
+		if err != nil {
+			log.Printf("Failed to init otel meter: %v", err)
+			return
+		}
+		defer mp.Shutdown(ctx)
+	}
 
 	router := gin.Default()
 
