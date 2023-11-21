@@ -8,7 +8,7 @@ WORKDIR /src/app
 COPY . .
 
 # Build the Go app
-RUN export GOPROXY=https://goproxy.cn && go mod download && go install github.com/cosmtrek/air@latest
+RUN export GOPROXY=https://goproxy.io && go mod download && go install github.com/cosmtrek/air@latest
 
 # Expose the application on port 8080 (if necessary)
 EXPOSE 8080
