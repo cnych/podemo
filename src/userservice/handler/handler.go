@@ -13,12 +13,6 @@ import (
 )
 
 func PingHandler(c *gin.Context) {
-	// reqCounter.Add(c.Request.Context(), 1, metric.WithAttributes(
-	// 	attribute.String("path", c.Request.URL.Path),
-	// 	attribute.String("method", c.Request.Method),
-	// 	attribute.String("host", c.Request.Host),
-	// 	attribute.Int("code", c.Writer.Status()),
-	// ))
 	c.JSON(http.StatusOK, gin.H{"message": "pong"})
 }
 
@@ -86,13 +80,6 @@ func LoginHandler(c *gin.Context) {
 }
 
 func UserInfoHandler(c *gin.Context) {
-	// reqCounter.Add(c.Request.Context(), 1, metric.WithAttributes(
-	// 	attribute.String("path", c.Request.URL.Path),
-	// 	attribute.String("method", c.Request.Method),
-	// 	attribute.String("host", c.Request.Host),
-	// 	attribute.Int("code", c.Writer.Status()),
-	// ))
-
 	for name, values := range c.Request.Header {
 		for _, value := range values {
 			fmt.Printf("%s: %s\n", name, value)

@@ -37,6 +37,17 @@ book-app-payservice-1       "/usr/bin/python3.9 …"   payservice          runni
 book-app-userservice-1      "/app/main"              userservice         running             8080/tcp
 ```
 
+⚠️ 注意 ⚠️：如果出现连不上数据库的问题，可以进入 `db` 服务的容器中，然后执行如下命令：
+
+```bash
+#进入容器，输入
+ALTER USER 'otel'@'%' IDENTIFIED WITH mysql_native_password BY '你的密码';
+# 验证
+SELECT user, host, plugin FROM mysql.user WHERE user = 'otel';
+# 看见plugin为mysql_native_password，刷新权限
+FLUSH PRIVILEGES;
+```
+
 启动后，你可以在浏览器中访问 [http://localhost](http://localhost) 来查看这个应用。
 
 ![首页](./docs/img/app-home.png)
